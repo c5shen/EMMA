@@ -1002,18 +1002,23 @@ class ExtendedAlignment(MutableAlignment):
         # backbone_names will be a dict from str->int
         insertions = []
         entries = [(n, s) for n, s in read_fasta(path)]
+        #all_names = [x[0] for x in entries]
         bb_elem_per_col = [0 for _i in range(len(entries[0][1]))]
         all_elem_per_col = [0 for _i in range(len(entries[0][1]))]
 
         # count how many non-gaps in each col that's only in the backbone
         # sequences. User discretion needed for making sure all backbone
         # keys are in the current alignment
-        query_names = list(set(self.keys()).difference(set(backbone_names.keys())))
+        query_names = []
+        #query_names = list(set(all_names).difference(set(backbone_names.keys())))
         for i in range(0, len(entries), 1):
             name, entry = entries[i]
             entry_count = tuple(1 if c != '-' else 0 for c in entry)
             if name in backbone_names:
                 bb_elem_per_col = list(map(add, bb_elem_per_col, entry_count))
+            else:
+                self[name] = entry
+                query_names.append(name)
             all_elem_per_col = list(map(add, all_elem_per_col, entry_count))
 
         # actual insertion: bb count == 0, all count == 1
@@ -1028,7 +1033,7 @@ class ExtendedAlignment(MutableAlignment):
             for _ins_col in insertions:
                 if query_entry[_ins_col] != '-':
                     query_entry[_ins_col] = query_entry[_ins_col].lower()
-            self.fragments.add(query_names)
+            self.fragments.add(query_name)
             self[query_name] = ''.join(query_entry)
         self._reset_col_names()
 

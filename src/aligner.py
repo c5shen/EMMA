@@ -1,4 +1,5 @@
 from configs import Configs
+from helpers.alignment_tools import Alignment
 import time, os
 
 '''
@@ -12,7 +13,7 @@ def alignSubQueries(outdir, query_paths, hmm_indexes):
 
     aln_dir = os.path.join(outdir, 'sub-alignments')
     if not os.path.isdir(aln_dir):
-        os.path.makedirs(aln_dir)
+        os.makedirs(aln_dir)
 
     out_paths = []
     for path in query_paths:

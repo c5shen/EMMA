@@ -35,6 +35,7 @@ class Configs:
     upper = 100
     subproblem_size = 500
     num_cpus = -1
+    continue_run = False
 
     # hmmalign/hmmsearch/magus paths
     magus_path = os.path.join(_root_dir, 'tools/magus/magus.py')
@@ -113,11 +114,16 @@ def valid_attribute(k, v):
 Build configurations
 '''
 def buildConfigs(args):
-    Configs.input_path = os.path.realpath(args.input_path)
-    Configs.hmmdir = os.path.realpath(args.hmmdir)
-    Configs.backbone_path = os.path.realpath(args.backbone_path)
-    Configs.backbone_tree_path = os.path.realpath(args.backbone_tree_path)
-    Configs.query_path = os.path.realpath(args.query_path)
+    if args.input_path != None:
+        Configs.input_path = os.path.realpath(args.input_path)
+    if args.hmmdir != None:
+        Configs.hmmdir = os.path.realpath(args.hmmdir)
+    if args.backbone_path != None:
+        Configs.backbone_path = os.path.realpath(args.backbone_path)
+    if args.backbone_tree_path != None:
+        Configs.backbone_tree_path = os.path.realpath(args.backbone_tree_path)
+    if args.query_path != None:
+        Configs.query_path = os.path.realpath(args.query_path)
     
     Configs.outdir = os.path.realpath(args.outdir)
     if not os.path.exists(Configs.outdir):
@@ -140,6 +146,8 @@ def buildConfigs(args):
     Configs.lower = args.lower
     Configs.upper = args.upper
     Configs.subproblem_size = args.subproblem_size
+
+    Configs.continue_run = args.continue_run
 
     # add any additional arguments to Configs
     #for k in args.__dict__.keys():

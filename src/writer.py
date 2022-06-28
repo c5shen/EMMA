@@ -59,10 +59,10 @@ def writeSubQueries(outdir, hmm_indexes, index_to_hmms, query_path,
         for taxon, seq in query.items():
             hmm_ind = hmm_indexes[0][0]
             if hmm_ind in ind_to_query:
-                ind_to_query[hmm_ind][t] = s
+                ind_to_query[hmm_ind][taxon] = seq
             else:
                 ind_to_query[hmm_ind] = Alignment()
-                ind_to_query[hmm_ind][t] = s
+                ind_to_query[hmm_ind][taxon] = seq
     del query
 
     counted_queries = 0

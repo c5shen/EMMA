@@ -96,8 +96,11 @@ def mainAlignmentProcess(args):
                 index_to_hmms, Configs.query_path, query_assignment,
                 Configs.subproblem_size)
     else:
-        # TODO: finish the checkpoint stuff for continuing a previous run
-        raise NotImplementedError
+        print('\nContinuing from the previous run...')
+        query_paths = os.popen('ls {}/queries'.format(
+            Configs.outdir)).read().split('\n')[:-1]
+        query_paths = [Configs.outdir + '/queries/{}'.format(x) for x in
+                query_paths]
 
     # run MAFFT-linsi-add for each subproblem
     subalignment_paths = alignSubQueries(Configs.outdir, query_paths,
