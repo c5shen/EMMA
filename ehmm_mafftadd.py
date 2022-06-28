@@ -5,12 +5,7 @@ import math, sys, os
 
 # find the HMM within range (size = [100, 500])
 def obtainHMMs(indir, lower, upper):
-    #indir = '/home/chengze5/tallis/aln_with_long_seq/benchmark_results/ehmm'
-    #dataset = '1000M1-indel'
-    #defi = 'full50'
-    #seq_length = 'full'
-    #rep = 0
-
+    print('In obtainHMMs', flush=True)
     hmmdir = os.path.join(indir, 'upp_align_txt')
     hmms = os.popen('find {} -name hmmbuild.model.* -type f'.format(hmmdir)).read().split('\n')[:-1]
 
@@ -19,8 +14,12 @@ def obtainHMMs(indir, lower, upper):
     index_to_hmms = {}
     index_to_num_seqs = {}
     for hmm in hmms:
-        lines = os.popen('head -n 12 {}'.format(hmm)).read().split('\n')[:-1]
-        num_seq = int(lines[-1].split(' ')[-1])
+        #print('Reading', hmm)
+        lines = os.popen('head -n 15 {}'.format(hmm)).read().split('\n')[:-1]
+        split_lines = [l.split() for l in lines]
+        _dict = {x[0]: ','.join(x[1:]) for x in split_lines}
+        num_seq = int(_dict['NSEQ'])
+
         if num_seq <= upper and num_seq >= lower:
             hmms_in_range.append(hmm)
             hmm_ind = int('/'.join(hmm.split('/')[:-1]).split('/')[-1].split('_')[-1])
@@ -33,6 +32,7 @@ def obtainHMMs(indir, lower, upper):
     return hmms_in_range, hmm_indexes, index_to_hmms, index_to_num_seqs
 
 def getHMMSearchResults(hmms):
+    print('In getHMMSearchResults', flush=True)
     scores = defaultdict(list)
     for hmm in hmms:
         hmmdir = '/'.join(hmm.split('/')[:-1])
@@ -51,26 +51,29 @@ def getHMMSearchResults(hmms):
     return scores
 
 def assignQueryToSubset(scores, hmm_indexes, index_to_hmms):
+    print('In assignQueryToSubset', flush=True)
     query_assignment = defaultdict(list)
-    assigned_hmms = []
+    assigned_hmms = set()
 
     for taxon, score in scores.items():
         hmm_ind = score[0][0]
         query_assignment[hmm_ind].append(taxon)
-        assigned_hmms.append(index_to_hmms[hmm_ind])
+        assigned_hmms.add(index_to_hmms[hmm_ind])
 
-    return query_assignment, assigned_hmms
+    return query_assignment, list(assigned_hmms)
 
 def writeSubBackbone(outdir, hmms):
+    print('In writeSubBackbone', flush=True)
     subbackbone_dir = os.path.join(outdir, 'sub-backbones')
     if not os.path.isdir(subbackbone_dir):
         os.makedirs(subbackbone_dir)
     
+    print(len(hmms))
     for hmm in hmms:
         hmmdir = '/'.join(hmm.split('/')[:-1])
         hmm_ind = int(hmmdir.split('/')[-1].split('_')[-1])
 
-        subaln_path = os.popen('find {} -name hmmbuild.input.* -type f'.format(
+        subaln_path = os.popen('find {} -maxdepth 1 -name hmmbuild.input.* -type f'.format(
             hmmdir)).read().split('\n')[0]
         os.system('cp {} {}/subset_{}_backbone.fasta'.format(
             subaln_path, subbackbone_dir, hmm_ind))
@@ -78,6 +81,7 @@ def writeSubBackbone(outdir, hmms):
 
 def writeSubQueries(outdir, hmm_indexes, index_to_num_seqs,
         query_path, query_assignment):
+    print('In writeSubQueries', flush=True)
     query_dir = os.path.join(outdir, 'queries')
     if not os.path.isdir(query_dir):
         os.makedirs(query_dir)
@@ -137,9 +141,11 @@ def writeSubQueries(outdir, hmm_indexes, index_to_num_seqs,
                 subset_ind, i))
             subproblem_queries.write(query_path, 'FASTA')
             query_paths.append(query_path)
+    print('Total number of sub-problems: {}'.format(len(query_paths)), flush=True)
     return query_paths
 
 def runMafftAdd(outdir, t, query_paths, hmm_indexes):
+    print('In runMafftAdd', flush=True)
     binary = '/home/chengze5/tallis/softwares/bin/mafft-linsi'
     add_dir = os.path.join(outdir, 'sub-alignments')
     if not os.path.isdir(add_dir):
@@ -186,6 +192,7 @@ def runMafftAdd(outdir, t, query_paths, hmm_indexes):
     #    aln.write(out_path, 'FASTA')
 
 def runMerger(outdir, aln_paths, backbone_path, t):
+    print('In runMerger', flush=True)
     # give an order file
     add_dir = os.path.join(outdir, 'sub-alignments')
     #aln_paths = os.popen('ls {}'.format(add_dir)).read().split('\n')[:-1]
