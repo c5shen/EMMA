@@ -16,6 +16,29 @@ from multiprocessing import Lock, Manager
 from concurrent.futures.process import ProcessPoolExecutor
 from functools import partial
 
+# max system recursion limit hard encoding to a large number
+# a temp fix for dendropy tree recursion issues
+sys.setrecursionlimit(10000)
+
+'''
+Delete all unnecessary intermediate files
+'''
+def clearTempFiles():
+    # make an empty dir for rsync removal
+    blank_dir = os.path.join(Configs.outdir, 'blank')
+    if not os.path.isdir(blank_dir):
+        os.makedirs(blank_dir)
+
+    dirs_to_remove = ['tree_decomp/fragment_chunks', 'tree_decomp/root']
+    for _d in dirs_to_remove:
+        if os.path.isdir('{}/{}'.format(Configs.outdir, _d)):
+            os.system('rsync -a --delete {}/ {}/{}/'.format(blank_dir,
+                Configs.outdir, _d))
+            os.system('rmdir {}/{}'.format(Configs.outdir, _d))
+
+    if os.path.isdir(blank_dir):
+        os.system('rmdir {}'.format(blank_dir))
+
 
 '''
 initialize the pool
@@ -114,4 +137,8 @@ def mainAlignmentProcess(args):
     Configs.warning('Closing ProcessPoolExecutor instance...')
     pool.shutdown()
     Configs.warning('ProcessPoolExecutor instance closed.')
+
+    # clean temporary files (mainly decomposition files)
+    clearTempFiles()
+
     print('\nAll done!')
