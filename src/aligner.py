@@ -32,6 +32,7 @@ def alignSubQueries(outdir, query_paths, hmm_indexes):
         if not (os.path.exists(out_path) and os.stat(out_path).st_size != 0):
             cmd = '{} --localpair --maxiterate 1000 --quiet --thread {} --add {} {} > {}'.format(
                     Configs.mafftpath, Configs.num_cpus, path, subaln_path, out_path)
+            Configs.debug('[MAFFT-add] Command used: {}'.format(cmd))
             os.system(cmd)
 
         # ensure outputs are all upper cases
@@ -41,6 +42,8 @@ def alignSubQueries(outdir, query_paths, hmm_indexes):
         aln.write(out_path, 'FASTA')
         del aln
         out_paths.append(out_path)
+        Configs.log('Finished sub-problem {}-{}, output: {}'.format(
+            hmm_ind, subproblem_ind, out_path))
 
     time_aln = time.time() - start
     Configs.log('Done aligning all sub-problems.')
