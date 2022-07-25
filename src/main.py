@@ -84,7 +84,7 @@ def mainAlignmentProcess(args):
         # and HMMSearches
         print('\nDecomposing the backbone tree...')
         decomp = DecompositionAlgorithm(Configs.backbone_path,
-                Configs.backbone_tree_path)
+                Configs.backbone_tree_path, Configs.lower)
         # only run hmmbuilds on sub-alignments in ranges
         hmmbuild_paths = decomp.decomposition(Configs.lower, Configs.upper,
                 lock, pool)

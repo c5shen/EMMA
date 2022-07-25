@@ -26,7 +26,7 @@ from helpers.math_utils import lcm
 Class to perform backbone tree decomposition as does in UPP
 '''
 class DecompositionAlgorithm(object):
-    def __init__(self, backbone_path, backbone_tree_path):
+    def __init__(self, backbone_path, backbone_tree_path, lower):
         self.symfrac = 0.0
         self.ere = 0.59
         self.informat = 'afa'
@@ -35,7 +35,10 @@ class DecompositionAlgorithm(object):
 
         self.strategy = 'centroid'              # default in SEPP/UPP
         self.decomp_strategy = 'hierarchical'   # ensemble of HMMs
-        self.alignment_size = 10                # default in UPP
+        if lower > 10:
+            self.alignment_size = lower
+        else:
+            self.alignment_size = 10            # default in UPP
         self.minsubsetsize = 2
         self.pdistance = 1                      # default in SEPP/UPP
         self.distances = {}
@@ -75,6 +78,12 @@ class DecompositionAlgorithm(object):
         start = time.time()
         Configs.log('Started decomposing the backbone to eHMM')
         alignment, tree = self.read_alignment_and_tree()
+
+        # do not decompose smaller than lower (since it is unnecessary)
+        if lower > self.alignment_size:
+            Configs.log('Updated decomposition subset size from {} to {}'.format(
+                self.alignment_size, lower))
+            self.alignment_size = lower
 
         assert isinstance(alignment, Alignment)
         assert isinstance(tree, PhylogeneticTree)
