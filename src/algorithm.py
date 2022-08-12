@@ -121,7 +121,9 @@ class DecompositionAlgorithm(object):
 
             num_taxa = len(subset_taxa)
             if num_taxa <= upper and num_taxa >= lower:
-                subset_args.append((label, subset_taxa))
+                subaln = alignment.sub_alignment(subset_taxa)
+                subaln.delete_all_gaps()
+                subset_args.append((label, subaln))
         
         Configs.log('Creating an ensemble of HMMs (of sizes [{}, {}])'.format(
             lower, upper) + ': {} subsets'.format(len(subset_args)))
@@ -131,7 +133,7 @@ class DecompositionAlgorithm(object):
         func = partial(subset_alignment_and_hmmbuild, lock, 
                 self.path, outdirprefix,
                 self.molecule, self.ere, self.symfrac,
-                self.informat, alignment)
+                self.informat)
         hmmbuild_paths = list(pool.map(func, subset_args))
         assert len(hmmbuild_paths) == len(subset_args), \
                 'Number of HMMs created does not match ' \
@@ -255,10 +257,8 @@ Obtain subset alignment given taxa, and run hmmbuild on the subset
 alignment.
 '''
 def subset_alignment_and_hmmbuild(lock, binary, outdirprefix, molecule, 
-        ere, symfrac, informat, alignment, args):
-    label, taxa = args
-    subalignment = alignment.sub_alignment(taxa)
-    subalignment.delete_all_gaps()
+        ere, symfrac, informat, args):
+    label, subalignment = args
 
     outdir = os.path.join(outdirprefix, label)
     if not os.path.isdir(outdir):
