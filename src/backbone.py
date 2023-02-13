@@ -75,10 +75,10 @@ class BackboneJob(object):
 
         if self.selection_strategy == 'median_length':
             l2 = int(lengths / 2)
-            if lengths % 2:
-                median_full_length = (seq_lengths[l2] + seq_lengths[l2+1]) / 2.0
-            else:
+            if lengths % 2 == 1 or l2 == lengths - 1:
                 median_full_length = seq_lengths[l2]
+            else:
+                median_full_length = (seq_lengths[l2] + seq_lengths[l2+1]) / 2.0
             min_length = int(median_full_length * (1 - self.backbone_threshold))
             max_length = int(median_full_length * (1 + self.backbone_threshold))
 
