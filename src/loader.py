@@ -5,12 +5,13 @@ from configs import Configs
 '''
 Obtain HMMs that have sizes within the given range
 '''
-def obtainHMMs(indir, lower, upper):
+def obtainHMMs(indir, lower, upper, hmmbuild_paths=[]):
     Configs.log('Obtaining HMMs in given range: [{}, {}]'.format(lower, upper))
     start = time.time()
 
-    hmmbuild_paths = os.popen('find {} -name hmmbuild.model.* -type f'.format(
-        indir)).read().split('\n')[:-1]
+    if len(hmmbuild_paths) == 0:
+        hmmbuild_paths = os.popen('find {} -name hmmbuild.model.* -type f'.format(
+            indir)).read().split('\n')[:-1]
 
     #hmms_in_range = []
     hmm_indexes = []
@@ -23,18 +24,19 @@ def obtainHMMs(indir, lower, upper):
         assert 'NSEQ' in _dict, 'NSEQ not found in HMMBuild file {}!'.format(path)
         num_seq = int(_dict['NSEQ'])
 
-        if num_seq <= upper and num_seq >= lower:
+        # one exception is that the backbone does not have enough sequences,
+        # so only one HMM is built
+        if (num_seq <= upper and num_seq >= lower) or len(hmmbuild_paths) == 1:
             #hmms_in_range.append(path)
             dirname = os.path.dirname(path)
             
             hmm_ind = int(dirname.split('/')[-1].split('_')[-1])
             hmm_indexes.append((hmm_ind, num_seq))
-
             index_to_hmms[hmm_ind] = (dirname, num_seq)
     
     hmm_indexes = sorted(hmm_indexes, key=lambda x: x[1], reverse=True)
     time_filter = time.time() - start
-    Configs.log('Done obtaining HMMs')
+    Configs.log('Done obtaining HMMs: {}'.format(hmm_indexes))
     Configs.runtime('Time to filter HMMs based on sizes (s): {}'.format(
         time_filter))
     return hmm_indexes, index_to_hmms

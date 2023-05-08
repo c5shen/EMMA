@@ -59,6 +59,7 @@ def mainAlignmentProcess(args):
 
     # 0) obtain the backbone alignment/tree and eHMMs
     # If no UPP eHMM directory provided, decompose from the backbone
+    hmmbuild_paths = []; hmmsearch_paths = []
     if not Configs.hmmdir:
         # if both backbone alignment/tree present
         if Configs.backbone_path and Configs.backbone_tree_path:
@@ -102,8 +103,9 @@ def mainAlignmentProcess(args):
     # hmm_indexes are sorted by their nums of sequences in desending order
     # index to hmms keys=(subset dirname, num seq of the sub-alignment)
     print('\nRunning the eMAFFTadd algorithm...')
+    # Optionally using the built paths, which are the ones used
     hmm_indexes, index_to_hmms = obtainHMMs(Configs.hmmdir,
-            Configs.lower, Configs.upper)
+            Configs.lower, Configs.upper, hmmbuild_paths=hmmbuild_paths)
     if not Configs.continue_run:
         scores = getHMMSearchResults(index_to_hmms)
 

@@ -124,9 +124,18 @@ class DecompositionAlgorithm(object):
                 subaln = alignment.sub_alignment(subset_taxa)
                 subaln.delete_all_gaps()
                 subset_args.append((label, subaln))
-        
-        Configs.log('Creating an ensemble of HMMs (of sizes [{}, {}])'.format(
-            lower, upper) + ': {} subsets'.format(len(subset_args)))
+
+        # if no HMMs are within the range, need to use just the entire
+        # backbone to create one single HMM
+        if len(subset_args) == 0:
+            Configs.warning('Cannot decompose to HMMs of sizes within ' + \
+                    'desired range: ({}, {})'.format(lower, upper) + \
+                    ', using one single HMM of the entire backbone.')
+            label = 'A_0_0'
+            subset_args.append((label, alignment))
+        else:
+            Configs.log('Creating an ensemble of HMMs (of sizes [{}, {}])'.format(
+                lower, upper) + ': {} subsets'.format(len(subset_args)))
 
         # create all subset alignments and HMMBuild them
         outdirprefix = self.outdir + '/root'
