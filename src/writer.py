@@ -44,12 +44,12 @@ def writeSubQueries(outdir, hmm_indexes, index_to_hmms, query_path,
     query.read_file_object(query_path)
     total_num_queries = len(query.keys())
 
-    # assign queries to corresponding sub-alignments (hmm_ind)
+    # assign queries to corresponding sub-alignments (alignment_ind)
     ind_to_query = {}
-    for hmm_ind, taxa in query_assignment.items():
+    for alignment_ind, taxa in query_assignment.items():
         taxa_that_exist = set(taxa).intersection(set(query.keys()))
         sub_query = query.sub_alignment(taxa_that_exist)
-        ind_to_query[hmm_ind] = sub_query
+        ind_to_query[alignment_ind] = sub_query
         for t in taxa_that_exist:
             query.pop(t)
 
@@ -57,16 +57,16 @@ def writeSubQueries(outdir, hmm_indexes, index_to_hmms, query_path,
     # then put it to the largest sub-alignment (arbitrarily tie-break)
     if len(query) > 0:
         for taxon, seq in query.items():
-            hmm_ind = hmm_indexes[0][0]
-            if hmm_ind in ind_to_query:
-                ind_to_query[hmm_ind][taxon] = seq
+            alignment_ind = hmm_indexes[0][0]
+            if alignment_ind in ind_to_query:
+                ind_to_query[alignment_ind][taxon] = seq
             else:
-                ind_to_query[hmm_ind] = Alignment()
-                ind_to_query[hmm_ind][taxon] = seq
+                ind_to_query[alignment_ind] = Alignment()
+                ind_to_query[alignment_ind][taxon] = seq
     del query
 
     counted_queries = 0
-    for hmm_ind, aln in ind_to_query.items():
+    for alignment_ind, aln in ind_to_query.items():
         counted_queries += len(aln.keys())
     assert counted_queries == total_num_queries, \
             ('Somehow not all queries are assigned correctly\t' + \
@@ -74,10 +74,16 @@ def writeSubQueries(outdir, hmm_indexes, index_to_hmms, query_path,
                 total_num_queries))
 
     query_paths = []
-    for hmm_ind, aln in ind_to_query.items():
+    for alignment_ind, aln in ind_to_query.items():
         # make sure each sub-alignment + query combo has <= subproblem_size 
         # sequences
-        query_size = len(aln); backbone_size = index_to_hmms[hmm_ind][1]
+        query_size = len(aln)
+        backbone_path = os.path.join(outdir, 'tree_decomp/root/A_{}'.format(
+            alignment_ind), 'subset.aln.fasta')
+        backbone_size = int(os.popen('wc -l {}'.format(
+            backbone_path)).read().split(' ')[0]) / 2
+
+        #backbone_size = index_to_hmms[hmm_ind][1]
         if query_size == 0:
             continue
         # if somehow the backbone sub-alignment has more sequences than
@@ -105,7 +111,7 @@ def writeSubQueries(outdir, hmm_indexes, index_to_hmms, query_path,
             subaln = aln.sub_alignment(subproblem_query_names)
 
             subproblem_query_path = os.path.join(query_dir,
-                    'subset_{}_query_{}.fasta'.format(hmm_ind, i))
+                    'subset_{}_query_{}.fasta'.format(alignment_ind, i))
             subaln.write(subproblem_query_path, 'FASTA')
             query_paths.append(subproblem_query_path)
 

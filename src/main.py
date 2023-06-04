@@ -85,15 +85,18 @@ def mainAlignmentProcess(args):
         # and HMMSearches
         print('\nDecomposing the backbone tree...')
         decomp = DecompositionAlgorithm(Configs.backbone_path,
-                Configs.backbone_tree_path, Configs.lower)
+                Configs.backbone_tree_path, Configs.lower, Configs.alignment_size)
         # only run hmmbuilds on sub-alignments in ranges
-        hmmbuild_paths = decomp.decomposition(Configs.lower, Configs.upper,
-                lock, pool)
+        subalignment_problems, hmmbuild_paths = decomp.decomposition(
+                Configs.lower, Configs.upper, lock, pool)
+
+        # TODO: if there is only one subalignment problem, there is no need to go
+        # through all-against-all HMMSearches
         print('\nPerforming targeted HMMSearches ' \
                 'between the eHMM and queries...')
         search = SearchAlgorithm(hmmbuild_paths)
         hmmsearch_paths = search.search(lock, pool)
-        
+
         # default to <outdir>/tree_comp/root
         Configs.hmmdir = Configs.outdir + '/tree_decomp/root'
     ############## codes from WITCH end ###############################
@@ -110,11 +113,12 @@ def mainAlignmentProcess(args):
         scores = getHMMSearchResults(index_to_hmms)
 
         # assign queries to sub-alignments based on ranked bit-scores
-        query_assignment, assigned_hmms = assignQueryToSubset(scores,
+        #query_assignment, assigned_hmms = assignQueryToSubset(scores,
+        query_assignment = assignQueryToSubset(scores,
                 hmm_indexes, index_to_hmms)
 
         # write sub-alignments to local (for running with mafft-linsi-add)
-        writeSubAlignment(Configs.outdir, assigned_hmms)
+        #writeSubAlignment(Configs.outdir, assigned_hmms)
 
         # write queries to local, split to equal-size subsets if necessary
         query_paths = writeSubQueries(Configs.outdir, hmm_indexes,
@@ -128,8 +132,7 @@ def mainAlignmentProcess(args):
                 query_paths]
 
     # run MAFFT-linsi-add for each subproblem
-    subalignment_paths = alignSubQueries(Configs.outdir, query_paths,
-            hmm_indexes)
+    subalignment_paths = alignSubQueries(Configs.outdir, query_paths)
 
     # merge all sub-alignments to form the final alignment
     print('\nMerging sub-alignments with transitivity...')

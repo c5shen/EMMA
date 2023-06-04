@@ -26,7 +26,7 @@ from helpers.math_utils import lcm
 Class to perform backbone tree decomposition as does in UPP
 '''
 class DecompositionAlgorithm(object):
-    def __init__(self, backbone_path, backbone_tree_path, lower):
+    def __init__(self, backbone_path, backbone_tree_path, lower, alignment_size=50):
         self.symfrac = 0.0
         self.ere = 0.59
         self.informat = 'afa'
@@ -36,9 +36,12 @@ class DecompositionAlgorithm(object):
         self.strategy = 'centroid'              # default in SEPP/UPP
         self.decomp_strategy = 'hierarchical'   # ensemble of HMMs
         if lower > 10:
-            self.alignment_size = lower
+            self.assignment_size = lower
         else:
-            self.alignment_size = 10            # default in UPP
+            self.assignment_size = 10           # default in UPP
+
+        self.alignment_size = alignment_size
+
         self.minsubsetsize = 2
         self.pdistance = 1                      # default in SEPP/UPP
         self.distances = {}
@@ -79,11 +82,19 @@ class DecompositionAlgorithm(object):
         Configs.log('Started decomposing the backbone to eHMM')
         alignment, tree = self.read_alignment_and_tree()
 
-        # do not decompose smaller than lower (since it is unnecessary)
-        if lower > self.alignment_size:
-            Configs.log('Updated decomposition subset size from {} to {}'.format(
-                self.alignment_size, lower))
-            self.alignment_size = lower
+        ## do not decompose smaller than lower (since it is unnecessary)
+        #if lower > self.assignment_size:
+        #    Configs.log('Updated assignment subset size from {} to {}'.format(
+        #        self.assignment_size, lower))
+        #    self.assignment_size = lower
+
+        # restrict alignment subset size to at most the total number of leaves
+        # in the backbone
+        total_backbone_taxa = tree.leaf_node_names()
+        if self.alignment_size > len(total_backbone_taxa):
+            Configs.log('Updated alignment subset size from {} to {}'.format(
+                self.alignment_size, len(total_backbone_taxa)))
+            self.alignment_size = len(total_backbone_taxa)
 
         assert isinstance(alignment, Alignment)
         assert isinstance(tree, PhylogeneticTree)
@@ -94,51 +105,114 @@ class DecompositionAlgorithm(object):
         # at the end
         tree.label_edges()
 
-        # decompose the tree into alignment subsets
+        ##### 6.4.2023 - for different levels of assignment and alignment
+        # Alignment will happen at a "higher" level in the decomposition
+        # e.g., when subtree is of size 200-400, we define the corresponding
+        # HMMs for alignments
+        # Assignment will happen at a "lower" level, e.g., when we further
+        # decompose the **alignment subtrees** to subtrees of size 50-100,
+        # we denote these subtrees for assignment of queries.
+        #
+        # Once queries are assigned using these assignment subsets, they will
+        # be aligned to the corresponding alignment subset (each assignment
+        # subset is an absolute subset of exactly one alignment subset).
         alignment_tree_map = PhylogeneticTree(
                 Tree(tree.den_tree)).decompose_tree(
                         self.alignment_size,
                         strategy=self.strategy,
-                        minSize=self.minsubsetsize,
+                        minSize=self.alignment_size,
                         tree_map={},
-                        decomp_strategy=self.decomp_strategy,
+                        decomp_strategy='centroid',
                         pdistance=self.pdistance,
                         distances=self.distances,
                         maxDiam=self.maxDiam)
         assert len(alignment_tree_map) > 0, (
-                'Tree could not be decomposed '
+                'Alignment Tree could not be decomposed '
                 'given the following settings: '
-                'strategy: {}\nminsubsetsize: {}\nalignment_size: {}'.format(
-                    self.strategy, self.minsubsetsize, self.alignment_size))
-        
-        Configs.debug('Alignment subsets: {}'.format(len(alignment_tree_map)))
+                'decomp_strategy: {}\nalignment_size: {}\nalignment_size: {}'.format(
+                    'centroid', self.alignment_size, self.alignment_size))
+        Configs.log('Broken into {} alignment subsets.'.format(
+            len(alignment_tree_map))) 
 
         subset_args = []
-        for a_key, a_tree in alignment_tree_map.items():
-            assert isinstance(a_tree, PhylogeneticTree)
-            label = 'A_0_{}'.format(a_key)
-            subset_taxa = a_tree.leaf_node_names()
+        outdirprefix = os.path.join(self.outdir, 'root')
+        subalignment_problems = []
+        for (aln_key, aln_tree) in alignment_tree_map.items():
+            assert isinstance(aln_tree, PhylogeneticTree)
+            # further decompose each alignment subproblem into assignment
+            # subproblems
+            Configs.log('Alignment subset {} has {} leaves'.format(
+                aln_key, len(aln_tree.leaf_node_names())))
+            subalignment_problems.append(aln_key)
 
-            num_taxa = len(subset_taxa)
-            if num_taxa <= upper and num_taxa >= lower:
-                subaln = alignment.sub_alignment(subset_taxa)
-                subaln.delete_all_gaps()
-                subset_args.append((label, subaln))
+            assignment_tree_map = PhylogeneticTree(
+                    Tree(aln_tree.den_tree)).decompose_tree(
+                            maxSize=self.assignment_size,
+                            strategy=self.strategy,
+                            minSize=self.minsubsetsize,
+                            tree_map={},
+                            decomp_strategy=self.decomp_strategy,
+                            pdistance=self.pdistance,
+                            distances=self.distances,
+                            maxDiam=self.maxDiam)
+            assert len(assignment_tree_map) > 0, (
+                    'Assignment Tree could not be decomposed '
+                    'given the following settings: '
+                    'decomp_strategy: {}\nassignment_size: {}\nminsubsetsize: {}'.format(
+                        self.decomp_strategy, self.assignment_size, self.minsubsetsize))
 
-        # if no HMMs are within the range, need to use just the entire
-        # backbone to create one single HMM
-        if len(subset_args) == 0:
-            Configs.warning('Cannot decompose to HMMs of sizes within ' + \
-                    'desired range: ({}, {})'.format(lower, upper) + \
-                    ', using one single HMM of the entire backbone.')
-            label = 'A_0_0'
-            subset_args.append((label, alignment))
-        else:
-            Configs.log('Creating an ensemble of HMMs (of sizes [{}, {}])'.format(
-                lower, upper) + ': {} subsets'.format(len(subset_args)))
+            Configs.log('Alignment subset {} has {} assignment subsets of sizes: {}'.format(
+                aln_key, len(assignment_tree_map),
+                ','.join([str(len(x.leaf_node_names())) for x in assignment_tree_map.values()])))
+            
+            # create the subproblems locally with the following structure:
+            # A_[aln_key]
+            #   |_<sub-alignment>
+            #   |_A_[aln_key]_0
+            #   |_A_[aln_key]_1
+            # ...
+
+            # first, get a sub-alignment for the current alignment subproblem
+            alignment_taxa = aln_tree.leaf_node_names()
+            subalignment = alignment.sub_alignment(alignment_taxa)
+            aln_dir = os.path.join(outdirprefix, 'A_{}'.format(aln_key))
+            if not os.path.isdir(aln_dir):
+                os.makedirs(aln_dir)
+            subalignment.write(os.path.join(aln_dir, 'subset.aln.fasta'), 'FASTA')
+
+            # then, create the remaining assignment subproblems
+            # within (lower, upper) bounds of num_taxa
+            alignment_subset_args = []
+            valid_assign_key = 0
+            for (assign_key, assign_tree) in assignment_tree_map.items():
+                subset_taxa = assign_tree.leaf_node_names()
+                num_taxa = len(subset_taxa)
+                if num_taxa <= upper and num_taxa >= lower:
+                    label = 'A_{}/A_{}_{}'.format(
+                            aln_key, aln_key, valid_assign_key)
+                    subaln = subalignment.sub_alignment(subset_taxa)
+                    #subaln.delete_all_gaps()
+                    alignment_subset_args.append((label, subaln))
+                    valid_assign_key += 1
+
+            # if no assignment subsets are within range for this alignment
+            # subset, then use the entire alignment subset as one assignment
+            # subset.
+            if len(alignment_subset_args) == 0:
+                Configs.warning('Alignment subset {}'.format(aln_key) + \
+                        'cannot be decomposed with desired range: ({}, {})'.format(
+                            lower, upper) + \
+                        ', using the entire alignment subset as one assignment ' + \
+                        'subset.')
+                label = 'A_{}/A_{}_0'.format(aln_key, aln_key)
+                alignment_subset_args.append((label, subalignment))
+            else:
+                Configs.log('Alignment subset {}:'.format(aln_key) + \
+                        ' creating {} subsets of sizes between [{}, {}].'.format(
+                            len(alignment_subset_args), lower, upper))
+            subset_args.extend(alignment_subset_args)
 
         # create all subset alignments and HMMBuild them
-        outdirprefix = self.outdir + '/root'
         func = partial(subset_alignment_and_hmmbuild, lock, 
                 self.path, outdirprefix,
                 self.molecule, self.ere, self.symfrac,
@@ -153,7 +227,7 @@ class DecompositionAlgorithm(object):
         dur = time.time() - start
         Configs.runtime('Time to decompose the backbone (s): {}'.format(
             dur))
-        return hmmbuild_paths
+        return subalignment_problems, hmmbuild_paths
 
 '''
 Class to perform HMMSearch on all hmmbuild subsets and fragment sequences
@@ -268,6 +342,7 @@ alignment.
 def subset_alignment_and_hmmbuild(lock, binary, outdirprefix, molecule, 
         ere, symfrac, informat, args):
     label, subalignment = args
+    subalignment.delete_all_gaps()
 
     outdir = os.path.join(outdirprefix, label)
     if not os.path.isdir(outdir):
@@ -295,6 +370,7 @@ def subset_alignment_and_hmmbuild(lock, binary, outdirprefix, molecule,
     finally:
         lock.release()
         return hmmbuild_path
+
 
 '''
 a single HMMSearch job between a frag chunk and an hmm

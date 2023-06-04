@@ -1,0 +1,110 @@
+
+v0.000 != v7.490 (2021/Oct/30)
+
+There is a problem in the configuration of your shell.
+Check the MAFFT_BINARIES environmental variable by
+$ echo $MAFFT_BINARIES
+
+This variable must be *unset*, unless you have installed MAFFT
+with a special configuration.  To unset this variable, type
+$ unset MAFFT_BINARIES
+or
+% unsetenv MAFFT_BINARIES
+Then retry
+$ mafft input > output
+
+To keep this change permanently, edit setting files
+(.bash_profile, .profile, .cshrc, etc) in your home directory
+to delete the MAFFT_BINARIES line.
+On MacOSX, also edit or remove the .MacOSX/environment.plist file
+and then re-login (MacOSX 10.6) or reboot (MacOSX 10.7).
+
+Please send a problem report to katoh@ifrec.osaka-u.ac.jp,
+if this problem remains.
+
+
+v0.000 != v7.490 (2021/Oct/30)
+
+There is a problem in the configuration of your shell.
+Check the MAFFT_BINARIES environmental variable by
+$ echo $MAFFT_BINARIES
+
+This variable must be *unset*, unless you have installed MAFFT
+with a special configuration.  To unset this variable, type
+$ unset MAFFT_BINARIES
+or
+% unsetenv MAFFT_BINARIES
+Then retry
+$ mafft input > output
+
+To keep this change permanently, edit setting files
+(.bash_profile, .profile, .cshrc, etc) in your home directory
+to delete the MAFFT_BINARIES line.
+On MacOSX, also edit or remove the .MacOSX/environment.plist file
+and then re-login (MacOSX 10.6) or reboot (MacOSX 10.7).
+
+Please send a problem report to katoh@ifrec.osaka-u.ac.jp,
+if this problem remains.
+
+
+v0.000 != v7.490 (2021/Oct/30)
+
+There is a problem in the configuration of your shell.
+Check the MAFFT_BINARIES environmental variable by
+$ echo $MAFFT_BINARIES
+
+This variable must be *unset*, unless you have installed MAFFT
+with a special configuration.  To unset this variable, type
+$ unset MAFFT_BINARIES
+or
+% unsetenv MAFFT_BINARIES
+Then retry
+$ mafft input > output
+
+To keep this change permanently, edit setting files
+(.bash_profile, .profile, .cshrc, etc) in your home directory
+to delete the MAFFT_BINARIES line.
+On MacOSX, also edit or remove the .MacOSX/environment.plist file
+and then re-login (MacOSX 10.6) or reboot (MacOSX 10.7).
+
+Please send a problem report to katoh@ifrec.osaka-u.ac.jp,
+if this problem remains.
+
+Traceback (most recent call last):
+  File "../emma.py", line 131, in <module>
+    main()
+  File "../emma.py", line 40, in main
+    mainAlignmentProcess(args)
+  File "/home/chengzes/Desktop/Research/softwares/EMMA/src/main.py", line 140, in mainAlignmentProcess
+    Configs.backbone_path)
+  File "/home/chengzes/Desktop/Research/softwares/EMMA/src/merger.py", line 18, in mergeAlignments
+    new_aln.merge_in(compact(subaln))
+  File "/home/chengzes/Desktop/Research/softwares/EMMA/helpers/alignment_tools.py", line 625, in compact
+    comp.update_from_alignment(alg)
+  File "/home/chengzes/Desktop/Research/softwares/EMMA/helpers/alignment_tools.py", line 591, in update_from_alignment
+    self.colcount = l
+UnboundLocalError: local variable 'l' referenced before assignment
+Command exited with non-zero status 1
+	Command being timed: "python3 ../emma.py -t 8 -b ./data/backbone.aln.fasta -e ./data/backbone.est.tre -q ./data/queries.unaln.fasta -d ./example_output --molecule dna --lower 10 --upper 30 --alignment-size 200 --subproblem-size 500 -o est.aln.fasta"
+	User time (seconds): 98.62
+	System time (seconds): 1.39
+	Percent of CPU this job got: 755%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:13.23
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 55376
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 3
+	Minor (reclaiming a frame) page faults: 608549
+	Voluntary context switches: 19684
+	Involuntary context switches: 616
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 23320
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1
