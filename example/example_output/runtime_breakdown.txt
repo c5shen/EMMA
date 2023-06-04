@@ -1,7 +1,0 @@
-Time to decompose the backbone (s): 0.4181816577911377
-Time to run all-against-all HMMSearches (s): 12.25016474723816
-Time to obtain HMMs based on sizes (s): 0.20982599258422852
-Time to obtain HMMSearch results and rank them (s): 0.12412261962890625
-Time to assign queries with the highest bit-scores (s): 6.461143493652344e-05
-Time to split and write queries to sub-queries (s): 0.004057407379150391
-Time to align all sub-problems (s): 0.04242873191833496
