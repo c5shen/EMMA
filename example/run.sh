@@ -1,7 +1,17 @@
 #!/bin/bash
+#SBATCH --time=03:59:59
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=8
+#SBATCH --partition=cs
+#SBATCH --mem=32GB
+#SBATCH -o %j.out
+#SBATCH -e %j.err
+
+module load python
+module load java/11
+time=/usr/bin/time
 
 emafftaddbin=../emma.py
-time=/usr/bin/time
 t=8
 
 query_path=./data/queries.unaln.fasta
@@ -31,4 +41,3 @@ if [ ! -s $outdir/est.aln.fasta ]; then
         --subproblem-size ${subproblem_size} \
         -o est.aln.fasta ; } 2> $outdir/runtime.txt
 fi
-cat $outdir/log.txt
