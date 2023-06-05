@@ -38,10 +38,11 @@ def obtainHMMs(indir, lower, upper, hmmbuild_paths=[]):
             subalignment_size = int(os.popen('wc -l {}'.format(subalignment_path)).read().split(' ')[0]) // 2
             
             # get alignment and assignment subproblem indexes
-            alignment_ind, hmm_ind = (int(x) for x in dirname.split('/')[-1].split('_')[1:])
+            index = dirname.split('/')[-1]
+            alignment_ind, hmm_ind = (int(x) for x in index.split('_')[1:])
             hmm_indexes.append((alignment_ind, subalignment_size, 
                 hmm_ind, num_seq))
-            index_to_hmms[hmm_ind] = (dirname, alignment_ind, num_seq)
+            index_to_hmms[index] = (dirname, alignment_ind, hmm_ind, num_seq)
     
     # sort by the subalignment size
     hmm_indexes = sorted(hmm_indexes, key=lambda x: x[1], reverse=True)
@@ -59,9 +60,8 @@ def getHMMSearchResults(index_to_hmms):
     start = time.time()
     
     scores = defaultdict(list)
-    for key, val in index_to_hmms.items():
-        hmm_ind = key
-        hmmdir, alignment_ind, num_seq = val
+    for index, val in index_to_hmms.items():
+        hmmdir, alignment_ind, hmm_ind, num_seq = val
 
         hmmsearch_paths = os.popen('find {} -name hmmsearch.results.* -type f'.format(
             hmmdir)).read().split('\n')[:-1]
@@ -73,11 +73,11 @@ def getHMMSearchResults(index_to_hmms):
                     # score[1] refers to bit-score
                     # we directly refer to the corresponding alignment subproblem
                     #scores[taxon].append((hmm_ind, score[1]))
-                    scores[taxon].append((alignment_ind, score[1]))
+                    scores[taxon].append((alignment_ind, hmm_ind, score[1]))
 
     # sort by bit-scores
     for taxon in scores.keys():
-        scores[taxon] = sorted(scores[taxon], key=lambda x: x[1], reverse=True)
+        scores[taxon] = sorted(scores[taxon], key=lambda x: x[2], reverse=True)
 
     time_get_and_rank = time.time() - start
     Configs.log('Done getting all targeted (within range) HMMSearch results')
@@ -96,7 +96,7 @@ def assignQueryToSubset(scores, hmm_indexes, index_to_hmms):
     query_assignment = defaultdict(list)
     assigned_hmms = set()
 
-    for taxon,score in scores.items():
+    for taxon, score in scores.items():
         # the alignment subproblem index with the highest bit-score
         alignment_ind = score[0][0]
         query_assignment[alignment_ind].append(taxon)

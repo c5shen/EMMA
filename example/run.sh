@@ -7,8 +7,8 @@
 #SBATCH -o %j.out
 #SBATCH -e %j.err
 
-module load python
-module load java/11
+#module load python
+#module load java/11
 time=/usr/bin/time
 
 emafftaddbin=../emma.py
@@ -20,9 +20,9 @@ backbone_tree=./data/backbone.est.tre
 ref_path=./data/queries.aln.fasta
 
 molecule=dna
-lower=10
-upper=30
-alignment_size=200
+lower=50
+upper=100
+alignment_size=50
 subproblem_size=500
 
 outdir=./example_output

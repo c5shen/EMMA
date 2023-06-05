@@ -52,9 +52,9 @@ class Configs:
     hmmsearchpath = os.path.join(hmmer_dir, 'hmmsearch')
     hmmbuildpath = os.path.join(hmmer_dir, 'hmmbuild')
     
-    ## mafft binary - use the one users installed if possible
-    #if shutil.which('mafft'):
-    #    mafftpath = shutil.which('mafft')
+    # mafft binary - use the one users installed if possible
+    if shutil.which('mafft'):
+        mafftpath = shutil.which('mafft')
 
 
     log_path = None

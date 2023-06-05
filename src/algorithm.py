@@ -183,17 +183,15 @@ class DecompositionAlgorithm(object):
             # then, create the remaining assignment subproblems
             # within (lower, upper) bounds of num_taxa
             alignment_subset_args = []
-            valid_assign_key = 0
             for (assign_key, assign_tree) in assignment_tree_map.items():
                 subset_taxa = assign_tree.leaf_node_names()
                 num_taxa = len(subset_taxa)
                 if num_taxa <= upper and num_taxa >= lower:
                     label = 'A_{}/A_{}_{}'.format(
-                            aln_key, aln_key, valid_assign_key)
+                            aln_key, aln_key, assign_key)
                     subaln = subalignment.sub_alignment(subset_taxa)
                     #subaln.delete_all_gaps()
                     alignment_subset_args.append((label, subaln))
-                    valid_assign_key += 1
 
             # if no assignment subsets are within range for this alignment
             # subset, then use the entire alignment subset as one assignment
@@ -207,9 +205,13 @@ class DecompositionAlgorithm(object):
                 label = 'A_{}/A_{}_0'.format(aln_key, aln_key)
                 alignment_subset_args.append((label, subalignment))
             else:
-                Configs.log('Alignment subset {}:'.format(aln_key) + \
-                        ' creating {} subsets of sizes between [{}, {}].'.format(
-                            len(alignment_subset_args), lower, upper))
+                #Configs.log('Alignment subset {}:'.format(aln_key) + \
+                #        ' creating {} subsets of sizes between [{}, {}]'.format(
+                #            len(alignment_subset_args), lower, upper))
+                Configs.log('Alignment subset {}: '.format(aln_key) + \
+                        'creating {} assignment subsets: {}.'.format(
+                            len(alignment_subset_args),
+                            ','.join([str((x[0], len(x[1]))) for x in alignment_subset_args])))
             subset_args.extend(alignment_subset_args)
 
         # create all subset alignments and HMMBuild them
