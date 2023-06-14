@@ -3,6 +3,12 @@
 
 EMMA is an ensemble usage of `MAFFT --add` (particularly, `MAFFT` with `-linsi` option) on large datasets. On the MAFFT webpage, `MAFFT-linsi --add` is accurate for adding sequences to an existing alignment, but is only recommended to use for a few hundreds of sequences. This project aims to scale `MAFFT-linsi --add` to run on large datasets with several thousands of sequences with similar alignment accuracy.
 
+----
+News
+----
+1. Currently developing an extension to the accepted version of EMMA at WABI 2023. Now support the assignment and alignment of query sequences to happen at different subsets. That is, we use smaller/less diverse subsets to assign query sequences (could be more accurate for assignment), but use the corresponding larger subsets (the subset that decomposes to the assigned smaller subsets) to align the query sequences (presumably more accurate due to inclusion of more query sequences for `MAFFT-linsi--add`).
+
+
 ---------------
 Method Overview
 ---------------
