@@ -1,4 +1,9 @@
 # EMMA - Extending Multiple alignments with MAFFT--add
+<a href="https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/c5shen/EMMA">
+    <img src="https://archive.softwareheritage.org/badge/origin/https://github.com/c5shen/EMMA/" alt="Archived | https://github.com/c5shen/EMMA"/>
+</a>
+
+
 (C) Chengze Shen
 
 EMMA is an ensemble usage of `MAFFT --add` (particularly, `MAFFT` with `-linsi` option) on large datasets. On the MAFFT webpage, `MAFFT-linsi --add` is accurate for adding sequences to an existing alignment, but is only recommended to use for a few hundreds of sequences. This project aims to scale `MAFFT-linsi --add` to run on large datasets with several thousands of sequences with similar alignment accuracy.
