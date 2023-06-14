@@ -101,11 +101,20 @@ def _init_parser():
             required=False, default='dna', choices=['amino', 'dna', 'rna'])
     emafftadd_group.add_argument('--lower', type=int, default=50,
             help=' '.join(['The lower bound of number of sequences in',
-                    'a sub-alignment to use, default: 50']),
+                    'a sub-alignment that a query can be assigned to,'
+                    'default: 50']),
             required=False)
     emafftadd_group.add_argument('--upper', type=int, default=100,
             help=' '.join(['The upper bound of number of sequences in',
-                    'a sub-alignment to use, default: 100']),
+                    'a sub-alignment that a query can be assigned to,',
+                    'default: 100']),
+            required=False)
+    emafftadd_group.add_argument('--alignment-size', type=int, default=50,
+            help=' '.join(['The minimum number of sequences in a sub-alignment',
+                    'that the MAFFT-linsi-add sub-problem will happen.',
+                    'The decomposition strategy used to get alignment subsets',
+                    'are disjoint, not hierarchical as to get assignment subsets.',
+                    'default: 50']),
             required=False)
     emafftadd_group.add_argument('--subproblem-size', type=int, default=500,
             help=' '.join(['The total number of sequences (sub-alignment + query)',

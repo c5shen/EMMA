@@ -6,7 +6,7 @@ import time, os
 Align each sub-problem by adding assigned query sequences to the target
 sub-alignment using MAFFT-linsi-add
 '''
-def alignSubQueries(outdir, query_paths, hmm_indexes):
+def alignSubQueries(outdir, query_paths):
     Configs.log('Aligning each sub-problem of adding query sequences ' + \
             'to the target sub-alignment')
     start = time.time()
@@ -20,15 +20,18 @@ def alignSubQueries(outdir, query_paths, hmm_indexes):
         # from filename to deduce the sub-alignment to use
         filename = path.split('/')[-1]
         parts = filename.split('.')[0].split('_')
-        hmm_ind, subproblem_ind = int(parts[1]), int(parts[3])
-        subaln_path = os.path.join(outdir, 'sub-backbones',
-                'subset_{}_backbone.fasta'.format(hmm_ind))
+        alignment_ind, subproblem_ind = int(parts[1]), int(parts[3])
+        #subaln_path = os.path.join(outdir, 'sub-backbones',
+        #        'subset_{}_backbone.fasta'.format(hmm_ind))
+        subaln_path = os.path.join(outdir, 'tree_decomp/root',
+                'A_{}'.format(alignment_ind),
+                'subset.aln.fasta')
         if not (os.path.exists(subaln_path) and os.path.exists(path)):
             raise ValueError('Either {} or {} not found!'.format(subaln_path,
                 path))
 
         out_path = os.path.join(aln_dir, 'subset_{}_query_{}.est.aln.fasta'.format(
-            hmm_ind, subproblem_ind))
+            alignment_ind, subproblem_ind))
         if not (os.path.exists(out_path) and os.stat(out_path).st_size != 0):
             cmd = '{} --localpair --maxiterate 1000 --quiet --thread {} --add {} {} > {}'.format(
                     Configs.mafftpath, Configs.num_cpus, path, subaln_path, out_path)
@@ -43,7 +46,7 @@ def alignSubQueries(outdir, query_paths, hmm_indexes):
         del aln
         out_paths.append(out_path)
         Configs.log('Finished sub-problem {}-{}, output: {}'.format(
-            hmm_ind, subproblem_ind, out_path))
+            alignment_ind, subproblem_ind, out_path))
 
     time_aln = time.time() - start
     Configs.log('Done aligning all sub-problems.')

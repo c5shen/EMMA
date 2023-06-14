@@ -33,6 +33,7 @@ class Configs:
 
     lower = 50
     upper = 100
+    alignment_size = 50
     subproblem_size = 500
     num_cpus = -1
     continue_run = False
@@ -51,9 +52,9 @@ class Configs:
     hmmsearchpath = os.path.join(hmmer_dir, 'hmmsearch')
     hmmbuildpath = os.path.join(hmmer_dir, 'hmmbuild')
     
-    ## mafft binary - use the one users installed if possible
-    #if shutil.which('mafft'):
-    #    mafftpath = shutil.which('mafft')
+    # mafft binary - use the one users installed if possible
+    if shutil.which('mafft'):
+        mafftpath = shutil.which('mafft')
 
 
     log_path = None
@@ -145,6 +146,7 @@ def buildConfigs(args):
     Configs.molecule = args.molecule
     Configs.lower = args.lower
     Configs.upper = args.upper
+    Configs.alignment_size = args.alignment_size
     Configs.subproblem_size = args.subproblem_size
 
     Configs.continue_run = args.continue_run
