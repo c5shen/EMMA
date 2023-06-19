@@ -95,12 +95,41 @@ class Configs:
                 f.write('{}\t[{}] {}\n'.format(time.strftime('%Y-%m-%d %H:%M:%S'),
                     level, msg))
 
-# print a list of all configurations
-def getConfigs():
-    print('\n********* Configurations **********')
-    for k, v in Configs.__dict__.items():
-        if valid_attribute(k, v):
-            print('\tConfigs.{}: {}'.format(k, v))
+# check for valid configurations and set them
+def set_valid_configuration(name, conf):
+    assert isinstance(conf, Namespace), \
+            'Looking for Namespace object but find {}'.format(type(conf))
+
+    # backbone alignment settings
+    if name == 'Backbone':
+        for k in conf.__dict__.keys():
+            attr = getattr(conf, k)
+            if not attr:
+                continue
+
+            if k == 'alignment_method':
+                assert str(attr).lower() in ['magus', 'mafft'], \
+                    'Backbone alignment method {} not implemented'.format(attr)
+            elif k == 'backbone_size':
+                assert int(attr) > 0, 'Backbone size needs to be > 0'
+            elif k == 'selection_strategy':
+                assert str(attr).lower() in ['median_length', 'random'], \
+                    'Selection strategy {} not implemented'.format(attr)
+            elif k == 'path':
+                assert os.path.exists(os.path.realpath(str(attr))), \
+                    '{} does not exist'.format(os.path.realpath(str(attr)))
+        setattr(Configs, name, conf)
+    # settings that change basic Configs class variables such as:
+    # fasttreepath, hmmalignpath, etc.
+    elif name == 'Basic':
+        for k in conf.__dict__.keys():
+            attr = getattr(conf, k)
+            if not attr:
+                continue
+            # set variable [k] to [attr] if provided
+            setattr(Configs, k, attr)
+    elif name == 'MAGUS':
+        setattr(Configs, name, conf)
 
 # valid attribute check
 def valid_attribute(k, v):
@@ -110,6 +139,45 @@ def valid_attribute(k, v):
     if not k.startswith('_'):
         return True
     return False
+
+# print a list of all configurations
+def getConfigs():
+    print('\n********* Configurations **********')
+    for k, v in Configs.__dict__.items():
+        if valid_attribute(k, v):
+            print('\tConfigs.{}: {}'.format(k, v))
+
+'''
+Read in from config file if it exists. Any cmd-line provided configs will
+override the config file.
+
+Original functionality comes from SEPP -> sepp/config.py
+'''
+def _read_config_file(filename, opts, expand=None):
+    Configs.debug('Reading config from {}'.format(filename))
+    config_defaults = []
+    cparser = configparser.ConfigParser()
+    cparser.optionxform = str
+    cparser.read_file(filename)
+
+    if cparser.has_section('commandline'):
+        for k, v in cparser.items('commandline'):
+            config_defaults.append('--{}'.format(k))
+            config_defaults.append(v)
+
+    for section in cparser.sections():
+        if section == 'commandline':
+            continue
+        if getattr(opts, section, None):
+            section_name_space = getattr(opts, section)
+        else:
+            section_name_space = Namespace()
+        for k, v in cparser.items(section):
+            if expand and k == 'path':
+                v = os.path.join(expand, v)
+            section_name_space.__setattr__(k, v)
+        opts.__setattr__(section, section_name_space)
+    return config_defaults
 
 '''
 Build configurations
@@ -152,9 +220,10 @@ def buildConfigs(args):
     Configs.continue_run = args.continue_run
 
     # add any additional arguments to Configs
-    #for k in args.__dict__.keys():
-    #    if k not in Configs.__dict__:
-    #        k_attr = getattr(args, k)
+    for k in args.__dict__.keys():
+        if k not in Configs.__dict__:
+            k_attr = getattr(args, k)
 
-    #        # check whether the configuration is valid
-    #        set_valid_configuration(k, k_attr)
+            # check whether the configuration is valid
+            set_valid_configuration(k, k_attr)
+            #setattr(Configs, k, k_attr)

@@ -1,18 +1,20 @@
+#!/usr/bin/env python3
 '''
 Created on 6.27.2022 by Chengze Shen
 
 Front of eMAFFTadd.
 '''
 
-import os, sys, time
+import subprocess, os, sys, time
 from argparse import ArgumentParser, Namespace
-#import logging
+import logging
 
 from src.main import mainAlignmentProcess
-from src import * 
+from configs import _read_config_file 
 from configs import *
 
 version = "0.1.0"
+_root_dir = os.path.dirname(os.path.realpath(__file__))
 
 def main():
     parser = _init_parser()
@@ -22,10 +24,25 @@ def main():
     opts = Namespace()
     main_cmd_defaults = []
     
-    # TODO: setup main configuration file
-    #if os.path.exists(main_config_path):
-    #    with open(main_config_path, 'r') as cfile:
-    #        main_cmd_defaults = _read_config_file(cfile, opts)
+    # generate main.config using default setting if it is missing
+    if not os.path.exists(main_config_path):
+        print('main.config not found, generating {}...'.format(main_config_path))
+        cmd = ['python3', '{}/setup.py'.format(_root_dir)]
+        try:
+            subprocess.run(cmd, check=True)
+            print('\n{} created successfully, please rerun EMMA.'.format(
+                main_config_path))
+            exit(0)
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            print('Failed to generate the main config file, ' + \
+                    'you may want to manually create the main.config ' + \
+                    'by copying default.config and make changes.')
+            print('Command tried:\n\t{}'.format(' '.join(cmd)))
+            exit(1)
+            
+    with open(main_config_path, 'r') as cfile:
+        main_cmd_defaults = _read_config_file(cfile, opts)
+
     input_args = main_cmd_defaults + cmdline_args
     args = parser.parse_args(input_args, namespace=opts)
 
@@ -37,7 +54,12 @@ def main():
         Configs.log('Main configuration loaded from {}'.format(
             main_config_path))
     
+    # run the codes
+    s1 = time.time()
     mainAlignmentProcess(args)
+    s2 = time.time()
+
+    Configs.log('EMMA finished in {} seconds...'.format(s2 - s1))
 
 
 def _init_parser():
