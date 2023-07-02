@@ -30,7 +30,7 @@ def clearTempFiles():
     if not os.path.isdir(blank_dir):
         os.makedirs(blank_dir)
 
-    dirs_to_remove = ['tree_decomp', 'queries']
+    dirs_to_remove = ['tree_decomp', 'queries', 'sub-alignments']
     for _d in dirs_to_remove:
         if os.path.isdir('{}/{}'.format(Configs.outdir, _d)):
             os.system('rsync -a --delete {}/ {}/{}/'.format(blank_dir,
