@@ -67,9 +67,9 @@ def calculateWeights(packed_data):
         weights[indexes[i]] = 1. / denominator
     
     #num_to_retain = min(Configs.num_hmms, len(weights))
-    # unlike WITCH, retain just some arbitrary number (1) of weights since we are
-    # only using THE HIGHEST ONE for assignment
-    num_to_retain = min(1, len(weights))
+    # unlike WITCH, retain just some arbitrary number (e.g., 5) of weights
+    # since we are only using THE HIGHEST ONE for assignment
+    num_to_retain = min(5, len(weights))
     sorted_weights = sorted([(ind, w) for ind, w in weights.items()],
             key = lambda x: x[1], reverse=True)[:num_to_retain]
     return {taxon: tuple(sorted_weights)}
@@ -101,16 +101,19 @@ def writeWeights(index_to_hmm, ranked_bitscores, pool):
     # - get sizes of each HMM
     all_sizes = {}
     for index, subset in index_to_hmm.items():
-        all_sizes[index] = subset.num_taxa
+        # subset fields -- (dirname, alignment_ind, hmm_ind, num_seq)
+        all_sizes[(subset[1], subset[2])] = subset[3]
 
     # iterate through each query taxon
     # write to local for each taxon and its weights
     weights, weights_map = {}, {}
     args = []
     for taxon, sorted_scores in ranked_bitscores.items():
+        # each element in sorted_scores fields --
+        #               (alignment_ind, hmm_ind, score[1])
         indexes = [x[0] for x in sorted_scores]
-        bitscores = [x[1] for x in sorted_scores]
-        sizes = [all_sizes[x] for x in indexes]
+        bitscores = [x[2] for x in sorted_scores]
+        sizes = [all_sizes[(x[0], x[1])] for x in sorted_scores]
         args.append((taxon, indexes, bitscores, sizes))
 
     all_taxon_to_weights = list(pool.map(calculateWeights, args))

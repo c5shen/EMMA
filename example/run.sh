@@ -39,5 +39,6 @@ if [ ! -s $outdir/est.aln.fasta ]; then
         --upper $upper \
         --alignment-size ${alignment_size} \
         --subproblem-size ${subproblem_size} \
+        --use-weight 1 \
         -o est.aln.fasta ; } 2> $outdir/runtime.txt
 fi

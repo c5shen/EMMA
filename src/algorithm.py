@@ -323,9 +323,10 @@ class SearchAlgorithm(object):
         for i in range(0, len(alg_chunks)):
             temp_file = None
             if alg_chunks[i]:
-                temp_file = tempfile.mktemp(
-                        prefix='fragment_chunk_{}'.format(i),
-                        suffix='.fasta', dir=fc_outdir)
+                temp_file = '{}/fragment_chunk_{}.fasta'.format(fc_outdir, i)
+                #temp_file = tempfile.mktemp(
+                #        prefix='fragment_chunk_{}'.format(i),
+                #        suffix='.fasta', dir=fc_outdir)
                 alg_chunks[i].write(temp_file, 'FASTA')
                 Configs.debug('Writing alignment chunk #{} to {}'.format(
                     i, temp_file))
@@ -349,15 +350,20 @@ def subset_alignment_and_hmmbuild(lock, binary, outdirprefix, molecule,
     outdir = os.path.join(outdirprefix, label)
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
+
+    # break down label for file names
+    label = label.split('/')[-1]
     
     # write subalignment to outdir
-    subalignment_path = tempfile.mktemp(prefix='hmmbuild.input.',
-            suffix='.fasta', dir=outdir)
+    subalignment_path = '{}/hmmbuild.input.{}.fasta'.format(outdir, label)
+    #subalignment_path = tempfile.mktemp(prefix='hmmbuild.input.',
+    #        suffix='.fasta', dir=outdir)
     subalignment.write(subalignment_path, 'FASTA')
 
     # run HMMBuild with 1 cpu given the subalignment
-    hmmbuild_path = tempfile.mktemp(prefix='hmmbuild.model.',
-            dir=outdir)
+    hmmbuild_path = '{}/hmmbuild.model.{}'.format(outdir, label)
+    #hmmbuild_path = tempfile.mktemp(prefix='hmmbuild.model.',
+    #        dir=outdir)
     cmd = [binary, '--cpu', '1',
             '--{}'.format(molecule),
             '--ere', str(ere),
@@ -379,12 +385,15 @@ a single HMMSearch job between a frag chunk and an hmm
 '''
 def subset_frag_chunk_hmmsearch(lock, binary, piped, elim, filters, args):
     outdir, hmm, unaligned, frag_index = args
+    hmm_label = hmm.split('/')[-1].split('.')[-1]
     
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
-    hmmsearch_path = tempfile.mktemp(
-            prefix='hmmsearch.results.fragment_chunk_{}.'.format(frag_index),
-            dir=outdir)
+    hmmsearch_path = '{}/hmmsearch.results.{}.fragment_chunk_{}'.format(
+            outdir, hmm_label, frag_index)
+    #hmmsearch_path = tempfile.mktemp(
+    #        prefix='hmmsearch.results.fragment_chunk_{}.'.format(frag_index),
+    #        dir=outdir)
     cmd = [binary, '--cpu', '1', '--noali', '-E', str(elim)]
     if not piped:
         cmd.extend(['-o', hmmsearch_path])
