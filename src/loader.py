@@ -97,7 +97,8 @@ def assignQueryToSubset(scores, hmm_indexes, index_to_hmms):
     assigned_hmms = set()
 
     for taxon, score in scores.items():
-        # the alignment subproblem index with the highest bit-score
+        # the alignment subproblem index with the highest bitscore
+        # score fields -- (alignment_ind, hmm_ind, [adjusted] bitscore)
         alignment_ind = score[0][0]
         query_assignment[alignment_ind].append(taxon)
         ## add the sub-alignment directory to assigned_hmms

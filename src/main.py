@@ -30,7 +30,7 @@ def clearTempFiles():
     if not os.path.isdir(blank_dir):
         os.makedirs(blank_dir)
 
-    dirs_to_remove = ['tree_decomp/fragment_chunks', 'tree_decomp/root']
+    dirs_to_remove = ['tree_decomp', 'queries']
     for _d in dirs_to_remove:
         if os.path.isdir('{}/{}'.format(Configs.outdir, _d)):
             os.system('rsync -a --delete {}/ {}/{}/'.format(blank_dir,
@@ -113,18 +113,20 @@ def mainAlignmentProcess(args):
     if not Configs.continue_run:
         scores = getHMMSearchResults(index_to_hmms)
 
+        # save regular bitscores to local
+        print('\nRegular bitscore written to {}/bitscore.txt...'.format(
+            Configs.outdir))
+        with open(os.path.join(Configs.outdir, 'bitscore.txt'), 'w') as f: 
+            for taxon, score in scores.items():
+                f.write('{}:{}\n'.format(taxon, ','.join([str(x) for x in score])))
+
         # use adjusted bitscore for assignment if specified
         if Configs.use_weight:
             Configs.log('Using adjusted bitscore for query assignment')
             scores = writeWeights(index_to_hmms, scores, pool) 
-            print('\nWriting adjusted bitscore to {}/scores.txt...'.format(
+            print('\nAdjusted bitscore written to {}/adjusted_bitscore.txt...'.format(
                 Configs.outdir))
-            writeWeightsToLocal(scores, Configs.outdir + '/scores.txt')
-        else:
-            # save regular bitscores to local
-            with open(os.path.join(Configs.outdir, 'scores.txt'), 'w') as f: 
-                for taxon, score in scores.items():
-                    f.write('{}:{}\n'.format(taxon, ','.join([str(x) for x in score])))
+            writeWeightsToLocal(scores, Configs.outdir + '/adjusted_bitscore.txt')
 
         # assign queries to sub-alignments based on ranked bit-scores
         #query_assignment, assigned_hmms = assignQueryToSubset(scores,
