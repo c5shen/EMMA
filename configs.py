@@ -31,6 +31,7 @@ class Configs:
     outdir = None
     output_path = None
 
+    use_weight = False
     lower = 50
     upper = 100
     alignment_size = 50
@@ -211,6 +212,7 @@ def buildConfigs(args):
         Configs.num_cpus = os.cpu_count()
 
     # emafftadd settings
+    Configs.use_weight = args.use_weight != 0
     Configs.molecule = args.molecule
     Configs.lower = args.lower
     Configs.upper = args.upper

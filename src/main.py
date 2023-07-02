@@ -8,6 +8,7 @@ from src.loader import obtainHMMs, getHMMSearchResults, \
 from src.writer import writeSubAlignment, writeSubQueries
 from src.aligner import alignSubQueries
 from src.merger import mergeAlignments
+from src.weighting import writeWeights
 
 #from helpers.alignment_tools import Alignment
 
@@ -116,6 +117,11 @@ def mainAlignmentProcess(args):
         with open(os.path.join(Configs.outdir, 'scores.txt'), 'w') as f: 
             for taxon, score in scores.items():
                 f.write('{}:{}\n'.format(taxon, ','.join([str(x) for x in score])))
+
+        # use adjusted bitscore for assignment if specified
+        if Configs.use_weight:
+            Configs.log('Using adjusted bitscore for query assignment')
+            scores = writeWeights(index_to_hmms, scores, pool) 
 
         # assign queries to sub-alignments based on ranked bit-scores
         #query_assignment, assigned_hmms = assignQueryToSubset(scores,

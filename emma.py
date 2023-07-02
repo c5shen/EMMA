@@ -121,6 +121,11 @@ def _init_parser():
     emafftadd_group.add_argument('--molecule', type=str,
             help='Whether input is amino/dna/rna, default: dna',
             required=False, default='dna', choices=['amino', 'dna', 'rna'])
+    emafftadd_group.add_argument('-w', '--use-weight',
+            type=int, required=False,
+            help=' '.join(['Whether to use adjusted bitscore (weight)',
+                        'for query assignment, default: 0']),
+            default=0)
     emafftadd_group.add_argument('--lower', type=int, default=50,
             help=' '.join(['The lower bound of number of sequences in',
                     'a sub-alignment that a query can be assigned to,'
