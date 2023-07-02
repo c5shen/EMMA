@@ -87,9 +87,15 @@ def mainAlignmentProcess(args):
         print('\nDecomposing the backbone tree...')
         decomp = DecompositionAlgorithm(Configs.backbone_path,
                 Configs.backbone_tree_path, Configs.lower, Configs.alignment_size)
-        # only run hmmbuilds on sub-alignments in ranges
-        subalignment_problems, hmmbuild_paths = decomp.decomposition(
-                Configs.lower, Configs.upper, lock, pool)
+        # legacy version for the first published paper (no differentiation
+        # between alignment and assignment levels)
+        # NOTE: only run hmmbuilds on sub-alignments in ranges
+        if Configs.legacy:
+            subalignment_problems, hmmbuild_paths = decomp.decomposition_legacy(
+                    Configs.lower, Configs.upper, lock, pool)
+        else:
+            subalignment_problems, hmmbuild_paths = decomp.decomposition(
+                    Configs.lower, Configs.upper, lock, pool)
 
         # TODO: if there is only one subalignment problem, there is no need to go
         # through all-against-all HMMSearches
@@ -114,7 +120,7 @@ def mainAlignmentProcess(args):
         scores = getHMMSearchResults(index_to_hmms)
 
         # save regular bitscores to local
-        print('\nRegular bitscore written to {}/bitscore.txt...'.format(
+        print('\n\tRegular bitscore written to {}/bitscore.txt...'.format(
             Configs.outdir))
         with open(os.path.join(Configs.outdir, 'bitscore.txt'), 'w') as f: 
             for taxon, score in scores.items():
@@ -124,9 +130,10 @@ def mainAlignmentProcess(args):
         if Configs.use_weight:
             Configs.log('Using adjusted bitscore for query assignment')
             scores = writeWeights(index_to_hmms, scores, pool) 
-            print('\nAdjusted bitscore written to {}/adjusted_bitscore.txt...'.format(
+            print('\tAdjusted bitscore written to {}/adjusted_bitscore.txt...'.format(
                 Configs.outdir))
             writeWeightsToLocal(scores, Configs.outdir + '/adjusted_bitscore.txt')
+        print('\n')
 
         # assign queries to sub-alignments based on ranked bit-scores
         #query_assignment, assigned_hmms = assignQueryToSubset(scores,

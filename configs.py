@@ -31,6 +31,7 @@ class Configs:
     outdir = None
     output_path = None
 
+    legacy = False
     use_weight = False
     lower = 50
     upper = 100
@@ -212,6 +213,7 @@ def buildConfigs(args):
         Configs.num_cpus = os.cpu_count()
 
     # emafftadd settings
+    Configs.legacy = args.legacy
     Configs.use_weight = args.use_weight != 0
     Configs.molecule = args.molecule
     Configs.lower = args.lower

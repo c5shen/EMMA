@@ -45,8 +45,9 @@ def alignSubQueries(outdir, query_paths):
         aln.write(out_path, 'FASTA')
         del aln
         out_paths.append(out_path)
-        Configs.log('Finished sub-problem {}-{}, output: {}'.format(
-            alignment_ind, subproblem_ind, out_path))
+        msg = 'Finished sub-problem {}-{}, output: {}'.format(
+            alignment_ind, subproblem_ind, out_path)
+        Configs.log(msg); print(msg)
 
     time_aln = time.time() - start
     Configs.log('Done aligning all sub-problems.')

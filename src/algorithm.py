@@ -72,6 +72,88 @@ class DecompositionAlgorithm(object):
         return alignment, tree
 
     '''
+    7.2.2023 - added legacy version for decomposition (only using [lower, upper]
+               to create alignment subsets, and each only has itself as the
+               assignment subset)
+    '''
+    def decomposition_legacy(self, lower, upper, lock, pool):
+        start = time.time()
+        Configs.log('(LEGACY VERSION) Started decomposing the backbone to eHMM')
+        alignment, tree = self.read_alignment_and_tree()
+
+        assert isinstance(alignment, Alignment)
+        assert isinstance(tree, PhylogeneticTree)
+
+        tree.get_tree().resolve_polytomies()
+        
+        # label edges with numbers so that we can assemble them back
+        # at the end
+        tree.label_edges()
+
+        # decompose the tree into alignment subsets
+        alignment_tree_map = PhylogeneticTree(
+                Tree(tree.den_tree)).decompose_tree(
+                        lower,
+                        strategy=self.strategy,
+                        minSize=self.minsubsetsize,
+                        tree_map={},
+                        decomp_strategy='hierarchical',
+                        pdistance=self.pdistance,
+                        distances=self.distances,
+                        maxDiam=self.maxDiam)
+        assert len(alignment_tree_map) > 0, (
+                'Tree could not be decomposed '
+                'given the following settings: '
+                'strategy: {}\nminsubsetsize: {}\nlower bound: {}'.format(
+                    self.strategy, self.minsubsetsize, lower))
+        Configs.debug('Alignment subsets: {}'.format(len(alignment_tree_map)))
+
+        # filter the map by the number of sequences in each subtree
+        _keys = list(alignment_tree_map.keys())
+        for _key in _keys:
+            _num_taxa = len(alignment_tree_map[_key].leaf_node_names())
+            if _num_taxa < lower or _num_taxa > upper:
+                alignment_tree_map.pop(_key)
+
+        # create exactly one assignment subset for each alignment subset 
+        subset_args = []
+        outdirprefix = os.path.join(self.outdir, 'root')
+        subalignment_problems = []
+        for (aln_key, aln_tree) in alignment_tree_map.items():
+            assert isinstance(aln_tree, PhylogeneticTree)
+            Configs.log('Alignment subset {} has {} leaves'.format(
+                aln_key, len(aln_tree.leaf_node_names())))
+            subalignment_problems.append(aln_key)
+            
+            # first, get a sub-alignment for the current alignment subproblem
+            alignment_taxa = aln_tree.leaf_node_names()
+            subalignment = alignment.sub_alignment(alignment_taxa)
+            aln_dir = os.path.join(outdirprefix, 'A_{}'.format(aln_key))
+            if not os.path.isdir(aln_dir):
+                os.makedirs(aln_dir)
+            subalignment.write(os.path.join(aln_dir, 'subset.aln.fasta'), 'FASTA')
+
+            label = 'A_{}/A_{}_0'.format(aln_key, aln_key)
+            subset_args.append((label, subalignment))
+
+        # create all subset alignments and HMMBuild them
+        func = partial(subset_alignment_and_hmmbuild, lock, 
+                self.path, outdirprefix,
+                self.molecule, self.ere, self.symfrac,
+                self.informat)
+        hmmbuild_paths = list(pool.map(func, subset_args))
+        assert len(hmmbuild_paths) == len(subset_args), \
+                'Number of HMMs created does not match ' \
+                'the original number of subsets'
+        Configs.log('Finished creating {} HMMs to {}'.format(
+            len(hmmbuild_paths), outdirprefix))
+        
+        dur = time.time() - start
+        Configs.runtime('Time to decompose the backbone (s): {}'.format(
+            dur))
+        return subalignment_problems, hmmbuild_paths
+
+    '''
     Do the decomposition on the backbone alignment/tree
     Take in a ProcessPoolExecutor for parallelism
 

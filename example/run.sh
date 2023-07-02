@@ -12,7 +12,7 @@
 time=/usr/bin/time
 
 emafftaddbin=../emma.py
-t=8
+t=-1
 
 query_path=./data/queries.unaln.fasta
 backbone_path=./data/backbone.aln.fasta
@@ -22,7 +22,7 @@ ref_path=./data/queries.aln.fasta
 molecule=dna
 lower=50
 upper=100
-alignment_size=50
+alignment_size=$lower
 subproblem_size=500
 
 outdir=./example_output
@@ -40,5 +40,6 @@ if [ ! -s $outdir/est.aln.fasta ]; then
         --alignment-size ${alignment_size} \
         --subproblem-size ${subproblem_size} \
         --use-weight 1 \
+        --legacy \
         -o est.aln.fasta ; } 2> $outdir/runtime.txt
 fi

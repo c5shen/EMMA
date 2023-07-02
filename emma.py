@@ -118,11 +118,14 @@ def _init_parser():
                     "sequences (upper and lower bounds).",
                     "Also users can decide the smallest sequence adding problem."]))
     parser.groups['emafftadd_group'] = emafftadd_group
+    emafftadd_group.add_argument('--legacy', default=False,
+            action='store_const', const=True, required=False,
+            help='Use legacy pipeline to create alignment subsets (first EMMA paper).')
     emafftadd_group.add_argument('--molecule', type=str,
             help='Whether input is amino/dna/rna, default: dna',
             required=False, default='dna', choices=['amino', 'dna', 'rna'])
     emafftadd_group.add_argument('-w', '--use-weight',
-            type=int, required=False,
+            type=int, required=False, choices=[0, 1],
             help=' '.join(['Whether to use adjusted bitscore (weight)',
                         'for query assignment, default: 0']),
             default=0)
