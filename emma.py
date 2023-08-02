@@ -106,6 +106,9 @@ def _init_parser():
                     'The signal is the existence of the following folders:',
                     'queries/, sub-backbones/, sub-alignments/, default off.']),
             default=False, const=True, required=False)
+    basic_group.add_argument('--keep-decomposition', action='store_const',
+            help='Whether to keep tree decomposition information',
+            required=False, default=False, const=True)
     #basic_group.add_argument('--chunksize', type=int,
     #        help='Chunksize for multiprocessing', required=False,
     #        default=1)

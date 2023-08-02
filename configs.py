@@ -39,6 +39,7 @@ class Configs:
     subproblem_size = 500
     num_cpus = -1
     continue_run = False
+    keep_decomposition = False
 
     # hmmalign/hmmsearch/magus paths
     magus_path = os.path.join(_root_dir, 'tools/magus/magus.py')
@@ -222,6 +223,7 @@ def buildConfigs(args):
     Configs.subproblem_size = args.subproblem_size
 
     Configs.continue_run = args.continue_run
+    Configs.keep_decomposition = args.keep_decomposition
 
     # add any additional arguments to Configs
     for k in args.__dict__.keys():
