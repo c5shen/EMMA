@@ -20,8 +20,8 @@ backbone_tree=./data/backbone.est.tre
 ref_path=./data/queries.aln.fasta
 
 molecule=dna
-lower=50
-upper=100
+lower=10
+upper=25
 alignment_size=$lower
 subproblem_size=500
 

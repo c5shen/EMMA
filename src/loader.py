@@ -1,6 +1,7 @@
 import time, os
 from collections import defaultdict
 from configs import Configs 
+import subprocess
 
 '''
 Obtain HMMs that have sizes within the given range
@@ -35,13 +36,19 @@ def obtainHMMs(indir, lower, upper, hmmbuild_paths=[]):
             subalignment_path = os.path.join('/'.join(dirname.split('/')[:-1]),
                     'subset.aln.fasta')
             assert os.path.exists(subalignment_path)
-            subalignment_size = int(os.popen('wc -l {}'.format(subalignment_path)).read().split(' ')[0]) // 2
+            #subalignment_size = int(os.popen('wc -l {}'.format(subalignment_path)).read().strip().split(' ')[0]) // 2
+            out = subprocess.Popen(['wc', '-l', subalignment_path],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT
+                                    ).communicate()[0]
+            subalignment_size = int(out.partition(b' ')[0]) // 2
             
             # get alignment and assignment subproblem indexes
             index = dirname.split('/')[-1]
             alignment_ind, hmm_ind = (int(x) for x in index.split('_')[1:])
             hmm_indexes.append((alignment_ind, subalignment_size, 
                 hmm_ind, num_seq))
+            print(hmm_indexes[-1])
             index_to_hmms[index] = (dirname, alignment_ind, hmm_ind, num_seq)
     
     # sort by the subalignment size
