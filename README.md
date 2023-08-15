@@ -62,9 +62,18 @@ python3 emma.py [-h]
 -------
 Examples
 -------
-### Scenario A: given an input alignment, adding a set of unaligned sequences
+### Scenario A: given an input alignment, adding a set of unaligned sequences (DNA)
 ```bash
-python3 emma.py -b [input alignment] -q [unaligned sequences] -d [output directory] -o est.aln.fasta
+python3 emma.py -b [input alignment] -q [unaligned sequences] \
+    -d [output directory] -o est.aln.fasta \
+    --molecule dna
+```
+
+### Scenario B: given just unaligned sequences, align them all (amino acid)
+```bash
+# the "backbone sequences" will be selected from inputs and aligned with default MAGUS
+python3 emma.py -i [input sequences] -d [output directory] -o est.aln.fasta \
+    --molecule amino
 ```
 
 # TO-DO
