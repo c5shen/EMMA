@@ -19,7 +19,7 @@ Method Overview
 ---------------
 ### Algorithm
 Given an input existing alignment $C$ on set $S$ (i.e., backbone alignment) and a set of unaligned sequences $Q$ (i.e., query sequences) that we want to add to $C$, EMMA outputs an alignment on $S\cup Q$ that induces $C$ when restricted to $S$. The detailed pipeline is presented below:
-1. __Construct a set of constraint sub-alignments from $C$__: Decompose $C$ to sub-alignments using the [UPP](https://github.com/smirarab/sepp/blob/master/README.UPP.md) decomposition strategy but limit to sub-alignments with $|Q_i|$ sequences, $50\leq |Q_i|\leq u$ ($u$ a user-provided free parameter).
+1. __Construct a set of constraint sub-alignments from $C$__: Decompose $C$ to sub-alignments using the [UPP](https://github.com/smirarab/sepp/blob/master/README.UPP.md) decomposition strategy but limit to sub-alignments with $|Q_i|$ sequences, $l\leq |Q_i|\leq u$ ($l,u$ are user-provided free parameters; default values are $l=10,u=25$).
 2. __Define the set of sub-problems__: Assign each query sequence $q\in Q$ to the best-fitting sub-alignment from Step 1. The assignment is determined by first constructing HMMs on the sub-alignments and then selecting the HMM with the highest bitscore for each $q$.
 3. __Run `MAFFT-linsi--add` on each sub-problem__: For each sub-problem (i.e., a sub-alignment $C_i$ on set $S_i$ with assigned query sequences $Q_i$), construct an extended sub-alignment on $S_i\cup Q_i$ using `MAFFT-linsi--add`.
 4. __Merge extended sub-alignments using transitivity__: All extended sub-alignments are consistent with each other (see proof in the main paper) and can merge to the backbone alignment with transitivity (see [SEPP/UPP](https://github.com/smirarab/sepp)). The merging produces the final alignment on $S\cup Q$.
@@ -40,7 +40,7 @@ EMMA requires the usage of `MAFFT` binaries. One is provided with the package (v
 ```
 python>=3.7
 configparser>=5.0.0
-dendropy>=4.5.3
+dendropy>=4.5.2,<4.6.0
 numpy>=1.15
 psutil>=5.0
 scipy>=1.1.0
