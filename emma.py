@@ -132,22 +132,22 @@ def _init_parser():
             help=' '.join(['Whether to use adjusted bitscore (weight)',
                         'for query assignment, default: 0']),
             default=0)
-    emafftadd_group.add_argument('--lower', type=int, default=50,
+    emafftadd_group.add_argument('--lower', type=int, default=10,
             help=' '.join(['The lower bound of number of sequences in',
                     'a sub-alignment that a query can be assigned to,'
-                    'default: 50']),
+                    'default: 10']),
             required=False)
-    emafftadd_group.add_argument('--upper', type=int, default=100,
+    emafftadd_group.add_argument('--upper', type=int, default=25,
             help=' '.join(['The upper bound of number of sequences in',
                     'a sub-alignment that a query can be assigned to,',
-                    'default: 100']),
+                    'default: 25']),
             required=False)
-    emafftadd_group.add_argument('--alignment-size', type=int, default=50,
+    emafftadd_group.add_argument('--alignment-size', type=int, default=25,
             help=' '.join(['The minimum number of sequences in a sub-alignment',
                     'that the MAFFT-linsi-add sub-problem will happen.',
                     'The decomposition strategy used to get alignment subsets',
                     'are disjoint, not hierarchical as to get assignment subsets.',
-                    'default: 50']),
+                    'default: 25']),
             required=False)
     emafftadd_group.add_argument('--subproblem-size', type=int, default=500,
             help=' '.join(['The total number of sequences (sub-alignment + query)',
