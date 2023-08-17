@@ -1,4 +1,4 @@
-# EMMA - Extending Multiple alignments with MAFFT--add
+# EMMA - Extending Multiple alignments with MAFFT-linsi --add
 <a href="https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/c5shen/EMMA">
     <img src="https://archive.softwareheritage.org/badge/origin/https://github.com/c5shen/EMMA/" alt="Archived | https://github.com/c5shen/EMMA"/>
 </a>
@@ -79,22 +79,17 @@ Scripts of the following examples can be found in `example/run.sh`. You can run 
 
 ### Scenario 1: given an input alignment and its tree, add unaligned sequences
 ```bash
-python3 emma.py -b [input alignment] -e [input tree] \
-    -q [unaligned sequences] \
-    -d [output directory] -o est.aln.fasta
+python3 emma.py -b [input alignment] -e [input tree] -q [unaligned sequences] -d [output directory] -o est.aln.fasta
 ```
 
 ### Scenario 2: given just an input alignment, add unaligned sequences
 ```bash
-python3 emma.py -b [input alignment] \
-    -q [unaligned sequences] \
-    -d [output directory] -o est.aln.fasta
+python3 emma.py -b [input alignment] -q [unaligned sequences] -d [output directory] -o est.aln.fasta
 ```
 
 ### Scenario 3: given just unaligned sequences, align them all
 ```bash
 # > the "backbone sequences" will be selected from inputs and aligned with default MAGUS
 # > a tree will be created for the backbone alignment using FastTree2
-python3 emma.py -i [input sequences] \
-    -d [output directory] -o est.aln.fasta
+python3 emma.py -i [input sequences] -d [output directory] -o est.aln.fasta
 ```
