@@ -6,13 +6,13 @@
 
 (C) Chengze Shen
 
-EMMA is an ensemble usage of `MAFFT --add` (particularly, `MAFFT` with `-linsi` option) on large datasets. On the MAFFT webpage, `MAFFT-linsi --add` is accurate for adding sequences to an existing alignment, but is only recommended to use for a few hundreds of sequences. This project aims to scale `MAFFT-linsi --add` to run on large datasets with several thousands of sequences with similar alignment accuracy.
+EMMA is an ensemble usage of `MAFFT --add` (particularly, `MAFFT` with the `-linsi` option) on large datasets. On the MAFFT webpage, `MAFFT-linsi --add` is accurate for adding sequences to an existing alignment but is only recommended for a few hundred of sequences. This project aims to scale `MAFFT-linsi --add` to run on large datasets with hundreds of thousands of sequences with similar (and sometimes better) alignment accuracy.
 
 ----
 News
 ----
 1. (NEW) Checkpoint system! Now you can resume from any point if a previous run was interrupted somehow (except for the HMMSearch step, currently in implementation).
-2. (NEW) Now automatically detects input data type/molecule (amino, dna, or rna).
+2. (NEW) Now automatically detects input data type/molecule (`amino`, `dna`, or `rna`).
 3. (NEW) Now has a progress bar for all intermediate steps (for better progress tracking!).
 
 
