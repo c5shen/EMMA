@@ -12,10 +12,21 @@ except ImportError:
 from src import *
 from argparse import ArgumentParser, Namespace
 from platform import platform
+from helpers.alignment_tools import inferDataType
+
 import shutil
 
 _root_dir = os.path.dirname(os.path.realpath(__file__))
 main_config_path = os.path.join(_root_dir, 'main.config')
+
+# default settings for tqdm progress bar style
+tqdm_styles = {
+        'desc': '\tRunning...', 'ascii': False,
+        'ncols': 80,
+        #'disable': True,
+        #'colour': 'green',
+        'mininterval': 0.5
+        }
 
 '''
 Configurations defined by users
@@ -37,12 +48,13 @@ class Configs:
 
     # by default use adjusted bitscore
     use_weight = True
+    save_weight = True
     lower = 10
     upper = 25
     alignment_size = 10
     subproblem_size = 500
     num_cpus = -1
-    continue_run = False
+    #continue_run = False
     keep_decomposition = False
 
     # hmmalign/hmmsearch/magus paths
@@ -101,6 +113,14 @@ class Configs:
             with open(path, 'a') as f:
                 f.write('{}\t[{}] {}\n'.format(time.strftime('%Y-%m-%d %H:%M:%S'),
                     level, msg))
+    
+    @staticmethod
+    def inferDataType(path):
+        if Configs.molecule is None: 
+            Configs.molecule = inferDataType(path)
+            Configs.log('Molecule type was not specified. Inferred type: {}'.format(
+                Configs.molecule))
+        return Configs.molecule
 
 # check for valid configurations and set them
 def set_valid_configuration(name, conf):
@@ -219,16 +239,18 @@ def buildConfigs(args):
 
     # emafftadd settings
     #Configs.legacy = args.legacy
-    Configs.legacy == (not args.experimental)
+    Configs.legacy = (not args.experimental)
+    Configs.experimental = args.experimental
 
     Configs.use_weight = args.use_weight != 0
+    Configs.save_weight = args.save_weight != 0
     Configs.molecule = args.molecule
     Configs.lower = args.lower
     Configs.upper = args.upper
     Configs.alignment_size = args.alignment_size
     Configs.subproblem_size = args.subproblem_size
 
-    Configs.continue_run = args.continue_run
+    #Configs.continue_run = args.continue_run
     Configs.keep_decomposition = args.keep_decomposition
 
     # add any additional arguments to Configs

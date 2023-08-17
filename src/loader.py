@@ -1,7 +1,9 @@
 import time, os
-from collections import defaultdict
-from configs import Configs 
 import subprocess
+from collections import defaultdict
+
+from configs import Configs 
+from helpers.alignment_tools import Alignment
 
 '''
 Obtain HMMs that have sizes within the given range
@@ -48,7 +50,7 @@ def obtainHMMs(indir, lower, upper, hmmbuild_paths=[]):
             alignment_ind, hmm_ind = (int(x) for x in index.split('_')[1:])
             hmm_indexes.append((alignment_ind, subalignment_size, 
                 hmm_ind, num_seq))
-            print(hmm_indexes[-1])
+            #print(hmm_indexes[-1])
             index_to_hmms[index] = (dirname, alignment_ind, hmm_ind, num_seq)
     
     # sort by the subalignment size
@@ -116,3 +118,25 @@ def assignQueryToSubset(scores, hmm_indexes, index_to_hmms):
     Configs.runtime('Time to assign queries with the highest bit-scores (s): {}'.format(
         time_assign))
     return query_assignment#, list(assigned_hmms)
+'''
+Function to create a local copy of the backbone alignment in upper-cases
+'''
+def writeTempBackbone(outdir, backbone_path):
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
+    tmp_backbone_path = os.path.join(outdir, 'backbone.aln.fasta')
+    Configs.log('Creating a local copy of backbone alignment ' + \
+            '(all letters to upper-cases) at: ' + \
+            tmp_backbone_path)
+    alignment = Alignment(); alignment.read_file_object(backbone_path)
+    backbone_length = alignment.sequence_length()
+
+    assert backbone_length != None, \
+            'The input backbone {} is not aligned!'.format(backbone_path)
+
+    for key in alignment.keys():
+        alignment[key] = alignment[key].upper()
+    alignment.write(tmp_backbone_path, 'FASTA')
+    del alignment
+
+    return tmp_backbone_path, backbone_length

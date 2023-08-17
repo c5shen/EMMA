@@ -7,7 +7,10 @@ Bitscore to weight calculation.
 import os
 import time
 import numpy as np
-from configs import Configs
+import concurrent.futures
+from tqdm import tqdm
+
+from configs import Configs, tqdm_styles
 
 class Weights(object):
     weights = dict()
@@ -117,7 +120,16 @@ def writeWeights(index_to_hmm, ranked_bitscores, pool):
         bitscores = [x[2] for x in sorted_scores]
         args.append((taxon, indexes, bitscores, sizes))
 
-    all_taxon_to_weights = list(pool.map(calculateWeights, args))
+    all_taxon_to_weights, futures = [], []
+    for arg in args:
+        futures.append(pool.submit(calculateWeights, arg))
+    for future in tqdm(
+            concurrent.futures.as_completed(futures),
+            total=len(args), **tqdm_styles):
+        res = future.result()
+        if res:
+            all_taxon_to_weights.append(res)
+
     taxon_to_weights = {}
     for item in all_taxon_to_weights:
         taxon_to_weights.update(item)
@@ -135,3 +147,17 @@ def writeWeightsToLocal(taxon_to_weights, path):
     with open(path, 'w') as f:
         for taxon, weights in taxon_to_weights.items():
             f.write('{}:{}\n'.format(taxon, weights))
+
+'''
+Read weights from local
+'''
+def readWeightsFromLocal(path):
+    Configs.log('Reading weights from {}'.format(path))
+    scores = {}
+    with open(path, 'r') as f:
+        line = f.readline()
+        while line:
+            taxon, taxon_weight = line.split(':')
+            scores[taxon] = eval(taxon_weight)
+            line = f.readline()
+    return scores

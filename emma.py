@@ -101,11 +101,11 @@ def _init_parser():
     basic_group.add_argument('-t', '--num-cpus', type=int,
             help='Number of cpus for multi-processing, default: -1 (all)',
             required=False, default=-1)
-    basic_group.add_argument('--continue-run', action='store_const',
-            help=' '.join(['Whether to continue from a previous stopped run.',
-                    'The signal is the existence of the following folders:',
-                    'queries/, sub-backbones/, sub-alignments/, default off.']),
-            default=False, const=True, required=False)
+    #basic_group.add_argument('--continue-run', action='store_const',
+    #        help=' '.join(['Whether to continue from a previous stopped run.',
+    #                'The signal is the existence of the following folders:',
+    #                'queries/, sub-backbones/, sub-alignments/, default off.']),
+    #        default=False, const=True, required=False)
     basic_group.add_argument('--keep-decomposition', action='store_const',
             help='Whether to keep tree decomposition information',
             required=False, default=False, const=True)
@@ -126,16 +126,19 @@ def _init_parser():
             help='Use legacy pipeline to create alignment subsets (first EMMA paper).')
     emafftadd_group.add_argument('--experimental', default=False,
             action='store_const', const=True, required=False,
-            help=','.join(['Use experimental setting that has different',
+            help=' '.join(['Use experimental setting that has different',
                 'decomposition sizes for query assignment and alignment.']))
     emafftadd_group.add_argument('--molecule', type=str,
-            help='Whether input is amino/dna/rna, default: dna',
-            required=False, default='dna', choices=['amino', 'dna', 'rna'])
+            help='Whether input is amino/dna/rna, default: infer from data',
+            required=False, default=None, choices=['amino', 'dna', 'rna'])
     emafftadd_group.add_argument('-w', '--use-weight',
-            type=int, required=False, choices=[0, 1],
+            type=int, required=False, choices=[0, 1], default=1,
             help=' '.join(['Whether to use adjusted bitscore (weight)',
-                        'for query assignment, default: 1']),
-            default=1)
+                        'for query assignment, default: 1']))
+    emafftadd_group.add_argument('--save-weight',
+            type=int, required=False, choices=[0, 1], default=1,
+            help=' '.join(['Whether to save weights to <outdir>/weights.txt,',
+                        'default: 1']))
     emafftadd_group.add_argument('--lower', type=int, default=10,
             help=' '.join(['The lower bound of number of sequences in',
                     'a sub-alignment that a query can be assigned to,'

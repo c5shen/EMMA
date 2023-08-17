@@ -4,11 +4,12 @@ from configs import *
 from src.algorithm import DecompositionAlgorithm, SearchAlgorithm
 from src.backbone import BackboneJob
 from src.loader import obtainHMMs, getHMMSearchResults, \
-        assignQueryToSubset
+        assignQueryToSubset, writeTempBackbone
 from src.writer import writeSubAlignment, writeSubQueries
 from src.aligner import alignSubQueries
 from src.merger import mergeAlignments
-from src.weighting import writeWeights, writeWeightsToLocal
+from src.weighting import writeWeights, writeWeightsToLocal, \
+        readWeightsFromLocal
 
 #from helpers.alignment_tools import Alignment
 
@@ -30,7 +31,7 @@ def clearTempFiles():
     if not os.path.isdir(blank_dir):
         os.makedirs(blank_dir)
 
-    dirs_to_remove = ['tree_decomp', 'queries', 'sub-alignments']
+    dirs_to_remove = ['queries', 'sub-alignments']
     if Configs.keep_decomposition:
         dirs_to_remove = dirs_to_remove[1:]
     for _d in dirs_to_remove:
@@ -64,7 +65,14 @@ def mainAlignmentProcess(args):
     # If no UPP eHMM directory provided, decompose from the backbone
     hmmbuild_paths = []; hmmsearch_paths = []
     if not Configs.hmmdir:
-        # if both backbone alignment/tree present
+        # default to <outdir>/tree_decomp/root
+        Configs.hmmdir = Configs.outdir + '/tree_decomp/root'
+    else:
+        assert os.path.isdir(Configs.hmmdir), \
+                'Provided HMM directory does not exist'
+
+    if not os.path.isdir(Configs.hmmdir):
+        # if both backbone alignment/tree are provided by the user
         if Configs.backbone_path and Configs.backbone_tree_path:
             pass
         else:
@@ -77,7 +85,8 @@ def mainAlignmentProcess(args):
 
             # jobs will only run if the corresponding paths are missing
             print('\nPerforming backbone alignment and/or tree estimation...')
-            bb_job = BackboneJob()
+            bb_job = BackboneJob(Configs.backbone_path, Configs.query_path,
+                    Configs.backbone_tree_path)
             bb_job.setup()
 
             Configs.backbone_path, Configs.query_path = \
@@ -87,76 +96,76 @@ def mainAlignmentProcess(args):
         # after obtaining backbone alignment/tree, perform decomposition
         # and HMMSearches
         print('\nDecomposing the backbone tree...')
-        decomp = DecompositionAlgorithm(Configs.backbone_path,
-                Configs.backbone_tree_path, Configs.lower, Configs.alignment_size)
+        decomp = DecompositionAlgorithm(
+                Configs.backbone_path,
+                Configs.backbone_tree_path,
+                Configs.lower, Configs.alignment_size)
         # legacy version for the first published paper (no differentiation
         # between alignment and assignment levels)
         # NOTE: only run hmmbuilds on sub-alignments in ranges
         if Configs.legacy:
-            subalignment_problems, hmmbuild_paths = decomp.decomposition_legacy(
+            hmmbuild_paths = decomp.decomposition_legacy(
                     Configs.lower, Configs.upper, lock, pool)
         else:
-            subalignment_problems, hmmbuild_paths = decomp.decomposition(
+            hmmbuild_paths = decomp.decomposition(
                     Configs.lower, Configs.upper, lock, pool)
-
-        # TODO: if there is only one subalignment problem, there is no need to go
-        # through all-against-all HMMSearches
-        print('\nPerforming targeted HMMSearches ' \
-                'between the eHMM and queries...')
+        print('\nPerforming all-against-all HMMSearches ' \
+                'between the backbone and queries...')
         search = SearchAlgorithm(hmmbuild_paths)
         hmmsearch_paths = search.search(lock, pool)
+        del decomp; del search
+    else:
+        # go over the given hmm directory and obtain all subset alignment
+        # get their retained columns with respect to the backbone alignment
+        print('\nFound existing HMM directory: {}'.format(Configs.hmmdir))
+        _dummy_search = SearchAlgorithm(None)
+        backbone_path = _dummy_search.readHMMDirectory(lock, pool)
+        if not Configs.backbone_path:
+            Configs.backbone_path = backbone_path
 
-        # default to <outdir>/tree_comp/root
-        Configs.hmmdir = Configs.outdir + '/tree_decomp/root'
+    # create a temp backbone alignment if not availble at <outdir>/tree_decomp/backbone
+    tmp_backbone_path, backbone_length = writeTempBackbone(
+            Configs.outdir + '/tree_decomp/backbone', Configs.backbone_path)
+
     ############## codes from WITCH end ###############################
 
     
     # obtain HMMSearch results
     # hmm_indexes are sorted by their nums of sequences in desending order
     # index to hmms keys=(subset dirname, num seq of the sub-alignment)
-    print('\nRunning the eMAFFTadd algorithm...')
     # Optionally using the built paths, which are the ones used
     hmm_indexes, index_to_hmms = obtainHMMs(Configs.hmmdir,
             Configs.lower, Configs.upper, hmmbuild_paths=hmmbuild_paths)
-    if not Configs.continue_run:
+
+    # obtain weights
+    weight_path = Configs.outdir + '/weights.txt'
+    if os.path.exists(weight_path):
+        print('\nFound existing weights: {}'.format(weight_path))
+        scores = readWeightsFromLocal(weight_path)
+    else:
         scores = getHMMSearchResults(index_to_hmms)
-
-        # save regular bitscores to local
-        print('\n\tRegular bitscore written to {}/bitscore.txt...'.format(
-            Configs.outdir))
-        with open(os.path.join(Configs.outdir, 'bitscore.txt'), 'w') as f: 
-            for taxon, score in scores.items():
-                f.write('{}:{}\n'.format(taxon, ','.join([str(x) for x in score])))
-
         # use adjusted bitscore for assignment if specified
         if Configs.use_weight:
-            Configs.log('Using adjusted bitscore for query assignment')
+            print('\nCalculating weights (adjusted bit-scores)...')
             scores = writeWeights(index_to_hmms, scores, pool) 
-            print('\tAdjusted bitscore written to {}/adjusted_bitscore.txt...'.format(
-                Configs.outdir))
-            writeWeightsToLocal(scores, Configs.outdir + '/adjusted_bitscore.txt')
-        print('\n')
+        else:
+            print('\nLoaded bit-scores...')
 
-        # assign queries to sub-alignments based on ranked bit-scores
-        #query_assignment, assigned_hmms = assignQueryToSubset(scores,
-        query_assignment = assignQueryToSubset(scores,
-                hmm_indexes, index_to_hmms)
+        if Configs.save_weight:
+            print('\t(user option) Writing weights to {}'.format(weight_path))
+            writeWeightsToLocal(scores, weight_path)
 
-        # write sub-alignments to local (for running with mafft-linsi-add)
-        #writeSubAlignment(Configs.outdir, assigned_hmms)
+    # assign queries to sub-alignments based on ranked bit-scores
+    query_assignment = assignQueryToSubset(scores, hmm_indexes, index_to_hmms)
 
-        # write queries to local, split to equal-size subsets if necessary
-        query_paths = writeSubQueries(Configs.outdir, hmm_indexes,
-                index_to_hmms, Configs.query_path, query_assignment,
-                Configs.subproblem_size)
-    else:
-        print('\nContinuing from the previous run...')
-        query_paths = os.popen('ls {}/queries'.format(
-            Configs.outdir)).read().split('\n')[:-1]
-        query_paths = [Configs.outdir + '/queries/{}'.format(x) for x in
-                query_paths]
+    # write queries to local, split to equal-size subsets if necessary
+    query_paths = writeSubQueries(Configs.outdir, hmm_indexes,
+            index_to_hmms, Configs.query_path, query_assignment,
+            Configs.subproblem_size)
 
     # run MAFFT-linsi-add for each subproblem
+    print('\nSolving each sub-problem with MAFFT-linsi --add...'.format(
+        len(query_paths)))
     subalignment_paths = alignSubQueries(Configs.outdir, query_paths)
 
     # merge all sub-alignments to form the final alignment

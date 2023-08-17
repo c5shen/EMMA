@@ -11,7 +11,14 @@ EMMA is an ensemble usage of `MAFFT --add` (particularly, `MAFFT` with `-linsi` 
 ----
 News
 ----
-1. Currently developing an extension to the accepted version of EMMA at WABI 2023. Now support the assignment and alignment of query sequences to happen at different subsets. That is, we use smaller/less diverse subsets to assign query sequences (could be more accurate for assignment), but use the corresponding larger subsets (the subset that decomposes to the assigned smaller subsets) to align the query sequences (presumably more accurate due to inclusion of more query sequences for `MAFFT-linsi--add`).
+1. (NEW) Now automatically detect input data type/molecule (amino, dna, or rna).
+2. (NEW) Now has progress bar for some steps (HMMSearch and weight calculation).
+
+
+# TO-DO
+* Add checkpoint support.
+* ~Add more customizable configuration support as WITCH.~
+* ~Finish up the pipeline so it supports building an alignment from scratch and not relying on UPP output.~
 
 
 ---------------
@@ -26,6 +33,7 @@ Given an input existing alignment $C$ on set $S$ (i.e., backbone alignment) and 
 
 #### Publication
 * Currently accepted in WABI 2023.
+* Working on a journal version for invitation to submit to Algorithms of Molecular Biology.
 
 ------------
 Installation
@@ -44,6 +52,7 @@ dendropy>=4.5.2,<4.6.0
 numpy>=1.15
 psutil>=5.0
 scipy>=1.1.0
+tqdm>=4.0.0
 ```
 
 ### Installation Steps
@@ -62,20 +71,29 @@ python3 emma.py [-h]
 -------
 Examples
 -------
-### Scenario A: given an input alignment, adding a set of unaligned sequences (DNA)
+Scripts of the following examples can be found in `example/run.sh`. You can run each scenario with
 ```bash
-python3 emma.py -b [input alignment] -q [unaligned sequences] \
-    -d [output directory] -o est.aln.fasta \
-    --molecule dna
+./run.sh [i]    # i can be 1, 2, or 3
 ```
 
-### Scenario B: given just unaligned sequences, align them all (amino acid)
+### Scenario 1: given an input alignment and its tree, add unaligned sequences
 ```bash
-# the "backbone sequences" will be selected from inputs and aligned with default MAGUS
-python3 emma.py -i [input sequences] -d [output directory] -o est.aln.fasta \
-    --molecule amino
+python3 emma.py -b [input alignment] -e [input tree] \
+    -q [unaligned sequences] \
+    -d [output directory] -o est.aln.fasta
 ```
 
-# TO-DO
-* Add more customizable configuration support as WITCH.
-* ~Finish up the pipeline so it supports building an alignment from scratch and not relying on UPP output.~
+### Scenario 2: given just an input alignment, add unaligned sequences
+```bash
+python3 emma.py -b [input alignment] \
+    -q [unaligned sequences] \
+    -d [output directory] -o est.aln.fasta
+```
+
+### Scenario 3: given just unaligned sequences, align them all
+```bash
+# > the "backbone sequences" will be selected from inputs and aligned with default MAGUS
+# > a tree will be created for the backbone alignment using FastTree2
+python3 emma.py -i [input sequences] \
+    -d [output directory] -o est.aln.fasta
+```

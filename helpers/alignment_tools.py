@@ -100,7 +100,7 @@ def write_compact_to_fasta(alignment, dest):
     if isinstance(dest, str):
         file_obj.close()
 
-def read_fasta(src):
+def read_fasta(src, remove_gaps=False):
     """generator that returns (name, sequence) tuples from either a FASTA
     formatted file or file object.
     """
@@ -119,7 +119,10 @@ def read_fasta(src):
     for line_number, i in enumerate(file_obj):
         if i.startswith('>'):
             if name:
-                yield name, ''.join(seq_list)
+                if remove_gaps:
+                    yield name, ''.join(seq_list).replace('-', '')
+                else:
+                    yield name, ''.join(seq_list)
                 seq_list = list()
             name = i[1:].strip()
         else:
@@ -129,7 +132,10 @@ def read_fasta(src):
             #    raise Exception("Error: illegal characeters in sequence at line %d" % line_number)
             seq_list.append(seq)
     if name:
-        yield name, ''.join(seq_list)
+        if remove_gaps:
+            yield name, ''.join(seq_list).replace('-', '')
+        else:
+            yield name, ''.join(seq_list)
     if isinstance(src, str):
         file_obj.close()
 
@@ -144,6 +150,37 @@ def write_fasta(alignment, dest):
         file_obj.write('>%s\n%s\n' % (name, seq) )
     if isinstance(dest, str):
         file_obj.close()
+
+'''
+Infer data type from file
+'''
+def inferDataType(path):
+    sequences = read_fasta(path, remove_gaps=True)
+    acg, t, u, total = 0, 0, 0, 0
+    for taxon, seq in sequences:
+        letters = seq.upper()
+        for letter in letters:
+            total = total + 1
+            
+            if letter in ('A', 'C', 'G', 'N'):
+                acg = acg + 1
+            elif letter == 'T':
+                t = t + 1
+            elif letter == 'U':
+                u = u + 1
+    
+    if u == 0 and (acg + t)/total > 0.9:
+        #print("Found {}% ACGT-N, assuming DNA..".format(int(100*(acg + t)/total)))
+        dataType = "dna"
+    elif t == 0 and (acg + u)/total > 0.9:
+        #print("Found {}% ACGU-N, assuming RNA..".format(int(100*(acg + u)/total)))
+        dataType = "rna"
+    else:
+        #print("Assuming protein..")
+        dataType = "amino"
+          
+    return dataType
+
 
 class Alignment(dict, object):
     """A simple class that maps taxa names to sequences.
@@ -710,7 +747,7 @@ class MutableAlignment(dict, ReadOnlyAlignment, object):
         If duplicate sequence names are encountered then the old name will
         be replaced.
         """
-        file_obj = open(filename, 'rU')
+        file_obj = open(filename, 'r')
         return self.read_file_object(file_obj, file_format=file_format)
 
     def read_file_object(self, file_obj, file_format='FASTA'):
@@ -960,7 +997,11 @@ class ExtendedAlignment(MutableAlignment):
     '''
     def read_query_alignment(self, query_name, path, aformat='fasta'):
         insertions = []
-        entries = [(n, s) for n, s in read_fasta(path)]
+        if aformat == 'fasta':
+            entries = [(n, s) for n, s in read_fasta(path)]
+        elif isinstance(path, MutableAlignment):
+            entries = [(n, s) for n, s in path.items()]
+
         num_elem_per_col = [0 for _i in range(len(entries[0][1]))]
 
         # count how many non-gaps in each col
@@ -977,11 +1018,16 @@ class ExtendedAlignment(MutableAlignment):
 
         # go over the query entry and see which column it has non-gap char
         # but backbone is gap (i.e., insertion)
+        # additionally, record the columns that query aligns to
         query_entry = [c for c in query_entry]
+        query_aligned_columns = []
         for j in range(0, len(query_entry), 1):
             if num_elem_per_col[j] == 0 and query_entry[j] != '-':
                 query_entry[j] = query_entry[j].lower()
                 insertions.append(j)
+                query_aligned_columns.append(-1)
+            elif num_elem_per_col[j] != 0 and query_entry[j] != '-':
+                query_aligned_columns.append(j)
         self.fragments.add(query_name); self[query_name] = ''.join(query_entry)
         self._reset_col_names()
 
@@ -995,63 +1041,7 @@ class ExtendedAlignment(MutableAlignment):
             if self._col_labels[c] >= 0:
                 self._col_labels[c] = regular
                 regular += 1
-        return query_name, set(insertions)
-
-    '''
-    6.27.2022 - added by Chengze Shen
-    a modified version of read_query_alignment to accomodate multiple query
-    sequences in the file
-    '''
-    def read_queries_alignment(self, backbone_names, path, aformat='fasta'):
-        # backbone_names will be a dict from str->int
-        insertions = []
-        entries = [(n, s) for n, s in read_fasta(path)]
-        #all_names = [x[0] for x in entries]
-        bb_elem_per_col = [0 for _i in range(len(entries[0][1]))]
-        all_elem_per_col = [0 for _i in range(len(entries[0][1]))]
-
-        # count how many non-gaps in each col that's only in the backbone
-        # sequences. User discretion needed for making sure all backbone
-        # keys are in the current alignment
-        query_names = []
-        #query_names = list(set(all_names).difference(set(backbone_names.keys())))
-        for i in range(0, len(entries), 1):
-            name, entry = entries[i]
-            entry_count = tuple(1 if c != '-' else 0 for c in entry)
-            if name in backbone_names:
-                bb_elem_per_col = list(map(add, bb_elem_per_col, entry_count))
-            else:
-                self[name] = entry
-                query_names.append(name)
-            all_elem_per_col = list(map(add, all_elem_per_col, entry_count))
-
-        # actual insertion: bb count == 0, all count == 1
-        # otherwise we cannot collapse that column with other alignments
-        for i in range(len(bb_elem_per_col)):
-            if bb_elem_per_col[i] == 0 and all_elem_per_col[i] == 1:
-                insertions.append(i)
-        
-        # go over all queries and mark the actual insertions to lower cases
-        for query_name in query_names:
-            query_entry = [c for c in self[query_name]]
-            for _ins_col in insertions:
-                if query_entry[_ins_col] != '-':
-                    query_entry[_ins_col] = query_entry[_ins_col].lower()
-            self.fragments.add(query_name)
-            self[query_name] = ''.join(query_entry)
-        self._reset_col_names()
-
-        # rename all columns to sequential numbers
-        insertion = -1
-        for c in insertions:
-            self._col_labels[c] = insertion
-            insertion -= 1
-        regular = 0
-        for c in range(0, self.get_length()):
-            if self._col_labels[c] >= 0:
-                self._col_labels[c] = regular
-                regular += 1
-        return query_names, set(insertions)
+        return query_name, set(insertions), tuple(query_aligned_columns)
 
     def build_extended_alignment(self, base_alignment, path_to_sto_extension,
                                  convert_to_string=True):
@@ -1098,7 +1088,7 @@ class ExtendedAlignment(MutableAlignment):
         columns. Labels insertion columns with special labels and labels the
         rest of columns (i.e. original columns) sequentially.
         """
-        handle = open(path, 'rU')
+        handle = open(path, 'r')
         insertions = None
         if aformat.lower() == "stockholm":
             insertions = self._read_sto(handle)
@@ -1394,3 +1384,38 @@ def readHMMSearch(path):
                         float(matches.group(2).strip()))
     f.close()
     return results
+
+'''
+Given an aligned string (represented by upper/lower case letters and gaps,
+return a condensed version that have the lowercase letters from both sides
+compressed to front/back.
+'''
+def compressInsertions(seq):
+    p = re.compile(r'[A-Z]+')
+    alns = [(m.start(), m.end()) for m in p.finditer(seq)]
+    # do not perform such task if there is no aligned column at all
+    if len(alns) == 0:
+        return seq
+
+    # first occurrence of aligned position defines the back of front search space
+    # i.e., [start, end)
+    f_start, f_end = 0, alns[0][0]
+    f_len = f_end - f_start
+
+    # last occurrence of aligned position defines the front of the back search space
+    b_start, b_end = alns[-1][1], len(seq)
+    b_len = b_end - b_start
+
+    # simplest way of compression: remove all gaps and add them back
+    f_str_ins = seq[f_start:f_end].replace('-', '')
+    f_len_ins = len(f_str_ins)
+    f_str = f_str_ins + '-' * (f_len - f_len_ins)
+
+    b_str_ins = seq[b_start:b_end].replace('-', '')
+    b_len_ins = len(b_str_ins)
+    b_str = '-' * (b_len - b_len_ins) + b_str_ins
+
+    # combine the compressed front/back with the remaining sequence
+    combined = f_str + seq[f_end:b_start] + b_str
+
+    return combined

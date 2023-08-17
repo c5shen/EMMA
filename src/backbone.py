@@ -16,7 +16,8 @@ Backbone alignment/tree job
 '''
 class BackboneJob(object):
     # default setting for a backbone alignment job
-    def __init__(self):
+    def __init__(self, backbone_path=None, query_path=None,
+            backbone_tree_path=None):
         self.alignment_method = 'magus'
         self.backbone_size = None 
         self.backbone_threshold = 0.25
@@ -27,9 +28,9 @@ class BackboneJob(object):
         self.tree_path = Configs.fasttreepath
 
         self.unaligned_backbone_path = None
-        self.backbone_path = None
-        self.query_path = None
-        self.backbone_tree_path = None
+        self.backbone_path = backbone_path
+        self.query_path = query_path
+        self.backbone_tree_path = backbone_tree_path
 
         # magus options
         self.magus_options = Namespace()
@@ -51,6 +52,17 @@ class BackboneJob(object):
         if not os.path.isdir(self.outdir):
             os.makedirs(self.outdir)
 
+        # set backbone and queries paths to default paths
+        # (and if the default path has an alignment, use it)
+        if not self.unaligned_backbone_path:
+            self.unaligned_backbone_path = self.outdir + '/backbone.unaln.fasta'
+        if not self.backbone_path:
+            self.backbone_path = self.outdir + '/backbone.aln.fasta'
+        if not self.query_path:
+            self.query_path = self.outdir + '/queries.fasta'
+        if not self.backbone_tree_path:
+            self.backbone_tree_path = self.outdir + '/backbone.tre'
+        
         print('\nUsing the following settings for the backbone:')
         for k, v in self.__dict__.items():
             if valid_attribute(k, v):
@@ -118,10 +130,10 @@ class BackboneJob(object):
         # selected, and some sequences are put in queries
         # WRITE - backbone_sequences -> local
         # MERGE - sequences + queries -> WRITE to local
-        unaligned_backbone_path = self.outdir + '/backbone.unaln.fasta'
+        unaligned_backbone_path = self.unaligned_backbone_path
         backbone_sequences.write(unaligned_backbone_path, 'FASTA')
 
-        query_path = self.outdir + '/queries.fasta'
+        query_path = self.query_path
         sequences.set_alignment(queries)
         sequences.write(query_path, 'FASTA')
 
@@ -131,50 +143,53 @@ class BackboneJob(object):
     def run_alignment(self):
         start = time.time()
 
-        # only run alignment if backbone path does not exist
-        if (Configs.backbone_path != None
-                and os.path.exists(Configs.backbone_path)):
-            Configs.log('Backbone alignment exists at {}'.format(
-                Configs.backbone_path))
-            self.backbone_path = Configs.backbone_path
-            print(' - Found backbone alignment at {}'.format(
-                self.backbone_path))
-
-            # assert we also are provided with query sequences
-            assert (Configs.query_path != None
-                and os.path.exists(Configs.query_path)), \
-                'Backbone alignment provided but no query sequences to align!'
-
-            Configs.log('Query sequences exist at {}'.format(
-                Configs.query_path))
-            self.query_path = Configs.query_path
-            print(' - Found query sequences at {}'.format(
-                self.query_path))
-            return self.backbone_path, self.query_path
-        
-        # first make sure we have unaligned sequences
-        assert Configs.input_path != None, \
-                'No input sequences to split to backbone/query!'
-
         if self.alignment_method == 'magus':
             self.path = Configs.magus_path
-        #else:
-        #    print('backbone alignment method '
-        #        + '[{}] not implemented'.format(self.alignment_method))
-        #    raise NotImplementedError
         
-        # select backbone sequences
-        input_sequences = MutableAlignment()
-        input_sequences.read_file_object(Configs.input_path)
+        # some scenarios for interrupted runs
+        # (1) backbone/queries are split, and backbone is aligned
+        # (2) as (1) but backbone is unaligned
+        # (3) backbone/queries are not split
+        if os.path.exists(self.backbone_path) \
+                and os.stat(self.backbone_path).st_size > 0 \
+                and os.path.exists(self.query_path):
+            Configs.log('Found existing backbone alignment: {}'.format(
+                self.backbone_path))
+            print('\nFound existing backbone alignment: {}'.format(
+                self.backbone_path))
+            # (1.1) query_path is empty meaning all sequences are in backbone
+            #       we assume that the user did not stop the run when writing
+            #       the query sequences
+            if os.stat(self.query_path).st_size == 0:
+                print('\nNo query sequences to align! Exiting...')
+                Configs.warning('No query sequences to align. Final alignment '
+                        + 'saved to {}'.format(Configs.output_path))
+                os.system('cp {} {}'.format(self.backbone_path, Configs.output_path))
+                exit(0)
+            else:
+                return self.backbone_path, self.query_path
+        elif os.path.exists(self.unaligned_backbone_path) \
+                and os.path.exists(self.query_path):
+            pass
+        else:
+            # before we split the backbone/query sequences, make sure
+            # the unaligned sequences (input) exist
+            if not (Configs.input_path and os.path.exists(Configs.input_path)):
+                Configs.error('Input sequences file does not exist')
+                raise FileNotFoundError('Input sequences file does not exist')
+                #notifyError('gcmm/backbone.py - BackboneJob.run_alignment()')
 
-        self.unaligned_backbone_path, self.query_path, queries = \
-                self.splitSequences(input_sequences)
+            # select backbone sequences
+            input_sequences = MutableAlignment()
+            input_sequences.read_file_object(Configs.input_path)
 
-        # run the alignment method,
+            self.unaligned_backbone_path, self.query_path, queries = \
+                    self.splitSequences(input_sequences)
+
+        # scenarios (2) and (3) both need to run the alignment method,
         # default output dir to <outdir>/tree_decomp/backbone/[method]_alignment
         alignment_outdir = self.outdir + '/{}_alignment'.format(
                 self.alignment_method)
-        self.backbone_path = self.outdir + '/backbone.aln.fasta'
         logfile_name = self.outdir \
                 + '/{}_alignment_log.txt'.format(self.alignment_method)
         logfile = open(logfile_name, 'w')
@@ -195,7 +210,7 @@ class BackboneJob(object):
                     self.unaligned_backbone_path]
             stdoutdata = open(self.backbone_path, 'w')
 
-        print('\nRunning {}...'.format(self.alignment_method))
+        print('\nRunning {} backbone alignment...'.format(self.alignment_method))
         Configs.log('Running {} backbone alignment...'.format(
             self.alignment_method))
         Configs.debug('[{}] Command used: {}'.format(
@@ -226,14 +241,12 @@ class BackboneJob(object):
         Configs.log('Finished {} backbone alignment, backbone file: {}'.format(
             self.alignment_method, self.backbone_path) +
             ', query file: {}'.format(self.query_path))
-        print(' - Backbone alignment generated at {}'.format(
-            self.backbone_path))
-        print(' - Query sequences saved at {}'.format(
-            self.query_path))
+        print('\tBackbone alignment generated at {}'.format(self.backbone_path))
+        print('\tQuery sequences saved at {}'.format(self.query_path))
 
         # PRE-MATURE END - no queries to align. All sequences aligned in
         # the backbone
-        if len(queries) == 0:
+        if os.stat(self.query_path).st_size == 0:
             print('\nNo query sequences to align! Exiting...')
             Configs.warning('No query sequences to align. Final alignment '
                     + 'saved to {}'.format(Configs.output_path))
@@ -243,54 +256,70 @@ class BackboneJob(object):
         Configs.runtime('Time to align the backbone (s): {}'.format(
             time.time() - start))
         return self.backbone_path, self.query_path
-        
 
     # run tree estimation
     def run_tree(self):
         start = time.time()
-        if self.backbone_path is None:
-            Configs.error('Did not find a backbone alignment when '
-                    + 'estimating the backbone tree.')
-            notifyError('gcmm/backbone.py - BackboneJob.run_tree()')
 
-        # MP-version of FastTree2
-        self.backbone_tree_path = self.outdir + '/backbone.tre'
-        logfile_name = self.outdir \
-                + '/{}_tree_log.txt'.format(self.tree_method)
-        stderrdata = open(logfile_name, 'w')
-        stdoutdata = open(self.backbone_tree_path, 'w')
+        # some scenarios for backbone tree estimation
+        # (1) backbone_tree_path exists (finished)
+        # (2) backbone_tree_path does not exist
+        if os.path.exists(self.backbone_tree_path) \
+                and os.stat(self.backbone_tree_path).st_size > 0:
+            Configs.log('Found existing backbone tree: {}'.format(
+                self.backbone_tree_path))
+            print('\nFound existing backbone tree: {}'.format(
+                self.backbone_tree_path))
+        else:
+            # before estimating the tree, making sure the backbone alignment
+            # exists
+            if not os.path.exists(self.backbone_path):
+                Configs.error('Did not find a backbone alignment when '
+                        + 'estimating the backbone tree.')
+                notifyError('gcmm/backbone.py - BackboneJob.run_tree()')
 
-        cmd = [self.tree_path, '-gtr']
-        if Configs.molecule == 'dna':
-            cmd.extend(['-nt'])
-        cmd.extend([self.backbone_path])
-        print('\nRunning {}...'.format(self.tree_method))
-        Configs.log('Running {} backbone tree estimation...'.format(
-            self.tree_method))
-        Configs.debug('[{}] Command used: {}'.format(
-            self.tree_method.upper(), ' '.join(cmd)))
+            # MP-version of FastTree2
+            logfile_name = self.outdir \
+                    + '/{}_tree_log.txt'.format(self.tree_method)
+            stderrdata = open(logfile_name, 'w')
+            stdoutdata = open(self.backbone_tree_path, 'w')
 
-        os.system('export OMP_NUM_THREADS={}'.format(Configs.num_cpus))
-        p = subprocess.Popen(cmd, stdout=stdoutdata, stderr=stderrdata)
-        p.wait()
-        if not stderrdata.closed:
-            stderrdata.close()
-        if not stdoutdata.closed:
-            stdoutdata.close()
-        
-        # check if backbone tree is successfully generated
-        if not os.path.exists(self.backbone_tree_path):
-            Configs.error('Failed to generate {} backbone tree, '.format(
-                self.tree_method) + 'please check log at {}'.format(
-                    logfile_name))
-            notifyError('gcmm/backbone.py - BackboneJob.run_tree()')
+            if Configs.molecule is None:
+                Configs.molecule = Configs.inferDataType(self.backbone_path)
 
-        Configs.log('Finished {} backbone tree, tree file: {}'.format(
-            self.tree_method, self.backbone_tree_path))
-        print(' - Backbone tree estimation generated at {}'.format(
-            self.backbone_tree_path))
+            cmd = [self.tree_path, '-gtr']
+            if Configs.molecule == 'dna':
+                cmd.extend(['-nt'])
+            cmd.extend([self.backbone_path])
+            print('\nRunning {} backbone tree estimation...'.format(
+                self.tree_method))
+            Configs.log('Running {} backbone tree estimation...'.format(
+                self.tree_method))
+            Configs.debug('[{}] Command used: {}'.format(
+                self.tree_method.upper(), ' '.join(cmd)))
 
-        Configs.runtime('Time to estimate the backbone tree (s): {}'.format(
-            time.time() - start))
+            os.system('export OMP_NUM_THREADS={}'.format(Configs.num_cpus))
+            p = subprocess.Popen(cmd, stdout=stdoutdata, stderr=stderrdata)
+            p.wait()
+            if not stderrdata.closed:
+                stderrdata.close()
+            if not stdoutdata.closed:
+                stdoutdata.close()
+            
+            # check if backbone tree is successfully generated
+            if not os.path.exists(self.backbone_tree_path):
+                Configs.error('Failed to generate {} backbone tree, '.format(
+                    self.tree_method) + 'please check log at {}'.format(
+                        logfile_name))
+                notifyError('gcmm/backbone.py - BackboneJob.run_tree()')
+
+            Configs.log('Finished {} backbone tree, tree file: {}'.format(
+                self.tree_method, self.backbone_tree_path))
+            print('\tBackbone tree estimation generated at {}'.format(
+                self.backbone_tree_path))
+
+            Configs.runtime('Time to estimate the backbone tree (s): {}'.format(
+                time.time() - start))
+
         return self.backbone_tree_path
 
