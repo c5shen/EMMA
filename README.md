@@ -11,12 +11,13 @@ EMMA is an ensemble usage of `MAFFT --add` (particularly, `MAFFT` with `-linsi` 
 ----
 News
 ----
-1. (NEW) Now automatically detect input data type/molecule (amino, dna, or rna).
-2. (NEW) Now has progress bar for some steps (HMMSearch and weight calculation).
+1. (NEW) Checkpoint system! Now you can resume from any point if a previous run was interrupted somehow (except for the HMMSearch step, currently in implementation).
+2. (NEW) Now automatically detects input data type/molecule (amino, dna, or rna).
+3. (NEW) Now has a progress bar for all intermediate steps (for better progress tracking!).
 
 
 # TO-DO
-* Add checkpoint support.
+* ~Add checkpoint support.~ Still need HMMSearch step checkpoint system.
 * ~Add more customizable configuration support as WITCH.~
 * ~Finish up the pipeline so it supports building an alignment from scratch and not relying on UPP output.~
 
