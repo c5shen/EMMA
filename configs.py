@@ -31,11 +31,15 @@ class Configs:
     outdir = None
     output_path = None
 
-    legacy = False
-    use_weight = False
-    lower = 50
-    upper = 100
-    alignment_size = 50
+    # currently, by default use the legacy setting
+    legacy = True
+    experimental = False
+
+    # by default use adjusted bitscore
+    use_weight = True
+    lower = 10
+    upper = 25
+    alignment_size = 10
     subproblem_size = 500
     num_cpus = -1
     continue_run = False
@@ -214,7 +218,9 @@ def buildConfigs(args):
         Configs.num_cpus = os.cpu_count()
 
     # emafftadd settings
-    Configs.legacy = args.legacy
+    #Configs.legacy = args.legacy
+    Configs.legacy == (not args.experimental)
+
     Configs.use_weight = args.use_weight != 0
     Configs.molecule = args.molecule
     Configs.lower = args.lower

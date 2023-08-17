@@ -124,14 +124,18 @@ def _init_parser():
     emafftadd_group.add_argument('--legacy', default=False,
             action='store_const', const=True, required=False,
             help='Use legacy pipeline to create alignment subsets (first EMMA paper).')
+    emafftadd_group.add_argument('--experimental', default=False,
+            action='store_const', const=True, required=False,
+            help=','.join(['Use experimental setting that has different',
+                'decomposition sizes for query assignment and alignment.']))
     emafftadd_group.add_argument('--molecule', type=str,
             help='Whether input is amino/dna/rna, default: dna',
             required=False, default='dna', choices=['amino', 'dna', 'rna'])
     emafftadd_group.add_argument('-w', '--use-weight',
             type=int, required=False, choices=[0, 1],
             help=' '.join(['Whether to use adjusted bitscore (weight)',
-                        'for query assignment, default: 0']),
-            default=0)
+                        'for query assignment, default: 1']),
+            default=1)
     emafftadd_group.add_argument('--lower', type=int, default=10,
             help=' '.join(['The lower bound of number of sequences in',
                     'a sub-alignment that a query can be assigned to,'
@@ -142,12 +146,12 @@ def _init_parser():
                     'a sub-alignment that a query can be assigned to,',
                     'default: 25']),
             required=False)
-    emafftadd_group.add_argument('--alignment-size', type=int, default=25,
+    emafftadd_group.add_argument('--alignment-size', type=int, default=10,
             help=' '.join(['The minimum number of sequences in a sub-alignment',
                     'that the MAFFT-linsi-add sub-problem will happen.',
                     'The decomposition strategy used to get alignment subsets',
                     'are disjoint, not hierarchical as to get assignment subsets.',
-                    'default: 25']),
+                    'default: 10']),
             required=False)
     emafftadd_group.add_argument('--subproblem-size', type=int, default=500,
             help=' '.join(['The total number of sequences (sub-alignment + query)',
