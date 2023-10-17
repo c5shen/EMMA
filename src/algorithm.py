@@ -343,8 +343,11 @@ class SearchAlgorithm(object):
 
         # use "find" command to find all subset directories
         cmd = 'find {} -maxdepth 3 -name A_*_* -type d'.format(Configs.hmmdir)
-        subset_dirs = [os.path.realpath(x)
-                for x in os.popen(cmd).read().split('\n')[:-1]]
+        #subset_dirs = [os.path.realpath(x)
+        #        for x in os.popen(cmd).read().split('\n')[:-1]]
+        raw = subprocess.check_output(cmd, stderr=subprocess.STDOUT,
+                universal_newlines=True, shell=True)
+        subset_dirs = [os.path.realpath(x) for x in raw.strip().split('\n')]
         Configs.log('Found existing HMM directory: {}'.format(Configs.hmmdir))
         Configs.log('Reading {} subsets...'.format(len(subset_dirs)))
 

@@ -39,11 +39,16 @@ def obtainHMMs(indir, lower, upper, hmmbuild_paths=[]):
                     'subset.aln.fasta')
             assert os.path.exists(subalignment_path)
             #subalignment_size = int(os.popen('wc -l {}'.format(subalignment_path)).read().strip().split(' ')[0]) // 2
-            out = subprocess.Popen(['wc', '-l', subalignment_path],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT
-                                    ).communicate()[0]
-            subalignment_size = int(out.partition(b' ')[0]) // 2
+            #out = subprocess.Popen(['wc', '-l', subalignment_path],
+            #                        stdout=subprocess.PIPE,
+            #                        stderr=subprocess.STDOUT
+            #                        ).communicate()[0]
+            #subalignment_size = int(out.partition(b' ')[0]) // 2
+            raw = subprocess.check_output(
+                    'wc -l {}; exit 0'.format(subalignment_path),
+                    stderr=subprocess.STDOUT,
+                    universal_newlines=True, shell=True)
+            subalignment_size = int(raw.strip().split(' ')[0]) // 2
             
             # get alignment and assignment subproblem indexes
             index = dirname.split('/')[-1]
@@ -72,8 +77,13 @@ def getHMMSearchResults(index_to_hmms):
     for index, val in index_to_hmms.items():
         hmmdir, alignment_ind, hmm_ind, num_seq = val
 
-        hmmsearch_paths = os.popen('find {} -name hmmsearch.results.* -type f'.format(
-            hmmdir)).read().split('\n')[:-1]
+        #hmmsearch_paths = os.popen('find {} -name hmmsearch.results.* -type f'.format(
+        #    hmmdir)).read().split('\n')[:-1]
+        raw = subprocess.check_output(
+                'find {} -name hmmsearch.results.* -type f'.format(hmmdir),
+                stderr= subprocess.STDOUT,
+                universal_newlines=True, shell=True)
+        hmmsearch_paths = raw.strip().split('\n')
 
         for path in hmmsearch_paths:
             with open(path, 'r') as f:

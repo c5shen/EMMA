@@ -33,7 +33,7 @@ def clearTempFiles():
 
     dirs_to_remove = ['queries', 'sub-alignments']
     if Configs.keep_decomposition:
-        dirs_to_remove = dirs_to_remove[1:]
+        dirs_to_remove = []
     for _d in dirs_to_remove:
         if os.path.isdir('{}/{}'.format(Configs.outdir, _d)):
             os.system('rsync -a --delete {}/ {}/{}/'.format(blank_dir,

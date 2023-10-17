@@ -34,20 +34,24 @@ subproblem_size=500
 if [[ $scenario == 1 ]]; then
     outdir=scenario_1_output
     python3 $emafftaddbin -t $t -b ${backbone_path} -e ${backbone_tree} \
-        -q ${query_path} -d $outdir -o est.aln.fasta
+        -q ${query_path} -d $outdir -o est.aln.fasta \
+        --keep-decomposition
 # scenario 2 - backbone alignment available but backbone tree is missing
 elif [[ $scenario == 2 ]]; then
     outdir=scenario_2_output
     python3 $emafftaddbin -t $t -b ${backbone_path} -q ${query_path} \
-        -d $outdir -o est.aln.fasta
+        -d $outdir -o est.aln.fasta \
+        --keep-decomposition
 # scenario 3 - both backbone alignment and tree are missing; only input sequences
 elif [[ $scenario == 3 ]]; then
     outdir=scenario_3_output
-    python3 $emafftaddbin -t $t -i ${unaln_path} -d $outdir -o est.aln.fasta
+    python3 $emafftaddbin -t $t -i ${unaln_path} -d $outdir -o est.aln.fasta \
+        --keep-decomposition
 # scenario 4 - use experimental setting for query assignment and alignment
 elif [[ $scenario == 4 ]]; then
     outdir=scenario_4_output
     python3 $emafftaddbin -t $t -b ${backbone_path} -e ${backbone_tree} \
         -q ${query_path} -d $outdir -o est.aln.fasta \
-        --experimental --lower 10 --upper 25 --alignment-size 25
+        --experimental --lower 10 --upper 25 --alignment-size 25 \
+        --keep-decomposition
 fi

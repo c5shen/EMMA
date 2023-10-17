@@ -1,5 +1,5 @@
 from configs import Configs
-import time, os, math, random
+import time, os, subprocess, math, random
 from helpers.alignment_tools import Alignment
 
 '''
@@ -16,8 +16,13 @@ def writeSubAlignment(outdir, assigned_hmms):
 
     for item in assigned_hmms:
         hmm_ind, hmmdir = item
-        subaln_path = os.popen('find {} -maxdepth 1 -name hmmbuild.input.* -type f'.format(
-            hmmdir)).read().split('\n')[0]
+        #subaln_path = os.popen('find {} -maxdepth 1 -name hmmbuild.input.* -type f'.format(
+        #    hmmdir)).read().split('\n')[0]
+        raw = subprocess.check_output(
+                'find {} -maxdepth 1 -name hmmbuild.input.* -type f'.format(hmmdir),
+                stderr=subprocess.STDOUT,
+                universal_newlines=True, shell=True)
+        subaln_path = raw.strip().split('\n')[0]
         os.system('cp {} {}/subset_{}_backbone.fasta'.format(
             subaln_path, subaln_dir, hmm_ind))
 
@@ -80,8 +85,13 @@ def writeSubQueries(outdir, hmm_indexes, index_to_hmms, query_path,
         query_size = len(aln)
         backbone_path = os.path.join(outdir, 'tree_decomp/root/A_{}'.format(
             alignment_ind), 'subset.aln.fasta')
-        backbone_size = int(os.popen('wc -l {}'.format(
-            backbone_path)).read().split(' ')[0]) / 2
+        #backbone_size = int(os.popen('wc -l {}'.format(
+        #    backbone_path)).read().split(' ')[0]) / 2
+        raw = subprocess.check_output(
+                'wc -l {}'.format(backbone_path),
+                stderr=subprocess.STDOUT,
+                universal_newlines=True, shell=True)
+        backbone_size = int(raw.strip().split(' ')[0]) / 2
 
         #backbone_size = index_to_hmms[hmm_ind][1]
         if query_size == 0:
