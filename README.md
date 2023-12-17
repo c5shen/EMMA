@@ -34,7 +34,7 @@ Given an input existing alignment $C$ on set $S$ (i.e., backbone alignment) and 
 
 #### Publication
 * Currently accepted in WABI 2023.
-* Working on a journal version for invitation to submit to Algorithms of Molecular Biology.
+* Currently published on Algorithms of Molecular Biology (https://doi.org/10.1186/s13015-023-00247-x).
 
 ------------
 Installation
