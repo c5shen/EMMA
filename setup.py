@@ -1,13 +1,34 @@
-import os, sys, shutil
+import os, sys, shutil, subprocess, time, signal
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
 from argparse import ArgumentParser, Namespace
 from platform import platform
+from helpers.general_tools import executeBinary
 
 _root_dir = os.path.dirname(os.path.realpath(__file__))
 _config_path = os.path.join(_root_dir, 'default.config')
+
+'''
+4.11.2024 - helper function to notify users which binary files are
+            having issues running (defined in main.config)
+'''
+def processExecutableOutput(section, item, binpath):
+    out, returncode = executeBinary(binpath)
+    b_err = 0
+
+    # unnormal error
+    if not (returncode == 0 or returncode == 1):
+        print('\n\t[{}] {}: returncode={}'.format(section, item, returncode))
+        print('\texecutable path:', binpath)
+        print('\tstdout:', out.stdout.strip())
+        print('\tstderr:', out.stderr.strip())
+        print('\tERROR: binary not found or cannot run on your environment!\n')
+        b_err = 1
+    else:
+        print('\t[{}] {}: returncode={}, success'.format(section, item, returncode))
+    return b_err
 
 def setup(prioritize_user_software, platform=platform()): 
     config_defaults = []
@@ -22,8 +43,9 @@ def setup(prioritize_user_software, platform=platform()):
         print('Main configuration file {} exists...'.format(main_config_path))
         ans = input('Do you wish to regenerate the file? [yes(y)/no(n)]:')
         if ans != 'yes' and ans != 'y':
-            print('Exiting EMMA configuration setup...')
-            exit(0)
+            with open(main_config_path, 'r') as f:
+                cparser.read_file(f)
+            return cparser
 
     print('\n\n')
     # initialize main config file using default config file
@@ -100,6 +122,7 @@ def setup(prioritize_user_software, platform=platform()):
     print('\n(Done) main.config written to {}'.format(main_config_path))
     print('If you would like to make manual changes, please directly edit {}'.format(
         main_config_path))
+    return cparser
 
 def main():
     parser = ArgumentParser()
@@ -115,10 +138,27 @@ def main():
                  'environment. default: true')
     args = parser.parse_args()
     
+    configs = None
     if args.configure:
-        setup(args.prioritize_user_software == "true", args.configure) 
+        configs = setup(args.prioritize_user_software == "true", args.configure) 
     else:
-        setup(args.prioritize_user_software == "true")
+        configs = setup(args.prioritize_user_software == "true")
+
+    '''
+    4.11.2024 - Added post-setup check on softwares to see if they can run
+    '''
+    print('\nChecking if binary executables can run...')
+    num_err = 0
+    for _section in ['Basic', 'MAGUS']:
+        for k, v in configs[_section].items():
+            # invoke the binaries and check their return codes
+            if 'path' in k:
+                num_err += processExecutableOutput(_section, k, v)
+    if num_err == 0:
+        print('All executables ran successfully...')
+
+    print('\nExiting EMMA configuration setup...')
+    exit(0)
 
 if __name__ == "__main__":
     main()
