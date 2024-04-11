@@ -74,7 +74,8 @@ python3 emma.py [-h]
 I currently do not have a working macOS system at hand for software testing purposes, hence the compiled macOS binaries included in EMMA may not be executable right now (reported by some users).
     
 * The most likely issue right now should be `FastTreeMP` (`main.config`, defined under `[Basic]` and `[MAGUS]` as `fasttreepath`). In the case this binary file is not working out, please download the source code from [FastTree.c](http://www.microbesonline.org/fasttree/FastTree.c).
-Direct quote from the [FastTree 2.1 webpage](http://www.microbesonline.org/fasttree/#Install):
+Direct quote from the [FastTree 2.1 webpage](http://www.microbesonline.org/fasttree/#Install) below.
+* After compilation, you can either put `FastTreeMP` under your `$PATH` variable, or change `fasttreepath` in `main.config` to point to your compiled FastTree executable.
 
     > If you use a Mac or other platform not included above, download FastTree.c and run
     >
