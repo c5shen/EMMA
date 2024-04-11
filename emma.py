@@ -27,18 +27,23 @@ def main():
     # generate main.config using default setting if it is missing
     if not os.path.exists(main_config_path):
         print('main.config not found, generating {}...'.format(main_config_path))
-        cmd = ['python3', '{}/setup.py'.format(_root_dir)]
-        try:
-            subprocess.run(cmd, check=True)
-            print('\n{} created successfully, please rerun EMMA.'.format(
-                main_config_path))
-            exit(0)
-        except (subprocess.CalledProcessError, FileNotFoundError) as e:
-            print('Failed to generate the main config file, ' + \
-                    'you may want to manually create the main.config ' + \
-                    'by copying default.config and make changes.')
-            print('Command tried:\n\t{}'.format(' '.join(cmd)))
-            exit(1)
+
+    # regardless of having main.config or not, run setup.py
+    # to examine binary executables before running emma.py
+    cmd = '{}/setup.py'.format(_root_dir)
+    out = subprocess.run(cmd, shell=True, text=True, 
+            capture_output=True)
+    returncode = out.returncode
+    if returncode != 0:
+        print('\nFailed to generate the main config file ' + \
+                'or encountered errors reading the configs.')
+        print('----> If {} does not exist: '.format(main_config_path) + \
+                '\n\tyou may want to create main.config by copying from ' + \
+                'default.config')
+        print('----> If encountered errors:\n\tplease check the outputs ' + \
+                'from setup.py')
+        print('\n*********** setup.py logs *************\n{}'.format(out.stdout))
+        exit(1)
             
     with open(main_config_path, 'r') as cfile:
         main_cmd_defaults = _read_config_file(cfile, opts)

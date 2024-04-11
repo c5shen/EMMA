@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os, sys, shutil, subprocess, time, signal
 try:
     import configparser
@@ -40,14 +41,15 @@ def setup(prioritize_user_software, platform=platform()):
 
     main_config_path = os.path.join(_root_dir, 'main.config')
     if os.path.exists(main_config_path):
-        print('Main configuration file {} exists...'.format(main_config_path))
-        ans = input('Do you wish to regenerate the file? [yes(y)/no(n)]:')
-        if ans != 'yes' and ans != 'y':
-            with open(main_config_path, 'r') as f:
-                cparser.read_file(f)
-            return cparser
+        print('Main configuration file already exists: {}'.format(main_config_path))
+        print('If you wish to regenerate configs, please delete the file above.')
+        #ans = input('Do you wish to regenerate the file? [yes(y)/no(n)]:')
+        #if ans != 'yes' and ans != 'y':
+        with open(main_config_path, 'r') as f:
+            cparser.read_file(f)
+        return cparser
 
-    print('\n\n')
+    print('\n')
     # initialize main config file using default config file
     default_config = configparser.ConfigParser()
     with open(_config_path, 'r') as f:
@@ -158,7 +160,7 @@ def main():
         print('All executables ran successfully...')
 
     print('\nExiting EMMA configuration setup...')
-    exit(0)
+    exit(num_err > 0)
 
 if __name__ == "__main__":
     main()
