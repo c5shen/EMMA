@@ -11,9 +11,10 @@ EMMA is an ensemble usage of `MAFFT --add` (particularly, `MAFFT` with the `-lin
 ----
 News
 ----
-1. (NEW) Checkpoint system! Now you can resume from any point if a previous run was interrupted somehow (except for the HMMSearch step, currently in implementation).
-2. (NEW) Now automatically detects input data type/molecule (`amino`, `dna`, or `rna`).
-3. (NEW) Now has a progress bar for all intermediate steps (for better progress tracking!).
+2. (NEW) Now will not exit after creating `main.config` for the first time (if directly running `emma.py [arguments]` without running `setup.py`). In addition, now EMMA will detect if the binaries defined in `main.config` are runnable and notify users if some binaries have an error when executing.
+1. Checkpoint system! Now you can resume from any point if a previous run was interrupted somehow (except for the HMMSearch step, currently in implementation).
+2. Now automatically detects input data type/molecule (`amino`, `dna`, or `rna`).
+3. Now has a progress bar for all intermediate steps (for better progress tracking!).
 
 
 # TO-DO
