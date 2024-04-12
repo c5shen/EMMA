@@ -98,8 +98,8 @@ def _init_parser():
     basic_group.add_argument('-q', '--query-path', type=str,
             help='Path to the queries file that we want to align', required=False)
     basic_group.add_argument('-d', '--outdir', type=str,
-            help='Output directory, default: emafftadd_output/', required=False,
-            default='emafftadd_output')
+            help='Output directory, default: output_emma/', required=False,
+            default='output_emma')
     basic_group.add_argument('-o', '--output-path', type=str,
             help='Output file name, default: est.aln.fasta', required=False,
             default='est.aln.fasta')

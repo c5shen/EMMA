@@ -19,8 +19,8 @@ def processExecutableOutput(section, item, binpath):
     out, returncode = executeBinary(binpath)
     b_err = 0
 
-    # unnormal error
-    if not (returncode == 0 or returncode == 1):
+    # unnormal error & deal with mafft issue
+    if not (returncode == 0 or returncode == 1) or 'v0.000' in out.stderr:
         print('\n\t[{}] {}: returncode={}'.format(section, item, returncode))
         print('\texecutable path:', binpath)
         print('\tstdout:', out.stdout.strip())
