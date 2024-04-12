@@ -80,19 +80,19 @@ Direct quote from the [FastTree 2.1 webpage](http://www.microbesonline.org/fastt
 
 Quote for FastTree:
 
-    > If you use a Mac or other platform not included above, download FastTree.c and run
-    >
-    > `gcc -O3 -finline-functions -funroll-loops -Wall -o FastTree FastTree.c -lm`
-    >
-    > (`gcc` is installed on many Mac OS X and Unix machines. If you use a Mac, you may need to install it from Xcode. `gcc` is also available for virtually every platform.) Note that FastTree will try to use SSE2/SSE3 instructions to speed up some inner loops. This will not work on many Windows or Mac machines. If FastTree will not run, then try compiling it with this command instead:
-    >
-    > `gcc -DNO_SSE -O3 -finline-functions -funroll-loops -Wall -o FastTree FastTree.c -lm`
-    >
-    > We have also heard that the -finline-functions option can cause an error. You can omit this option.
-    >
-    > If you want to build the multi-threaded "FastTreeMP," use
-    >
-    > `gcc -DOPENMP -fopenmp -O3 -finline-functions -funroll-loops -Wall -o FastTreeMP FastTree.c -lm`
+> If you use a Mac or other platform not included above, download FastTree.c and run
+>
+> `gcc -O3 -finline-functions -funroll-loops -Wall -o FastTree FastTree.c -lm`
+>
+> (`gcc` is installed on many Mac OS X and Unix machines. If you use a Mac, you may need to install it from Xcode. `gcc` is also available for virtually every platform.) Note that FastTree will try to use SSE2/SSE3 instructions to speed up some inner loops. This will not work on many Windows or Mac machines. If FastTree will not run, then try compiling it with this command instead:
+>
+> `gcc -DNO_SSE -O3 -finline-functions -funroll-loops -Wall -o FastTree FastTree.c -lm`
+>
+> We have also heard that the -finline-functions option can cause an error. You can omit this option.
+>
+> If you want to build the multi-threaded "FastTreeMP," use
+>
+> `gcc -DOPENMP -fopenmp -O3 -finline-functions -funroll-loops -Wall -o FastTreeMP FastTree.c -lm`
 
 -------
 Examples
