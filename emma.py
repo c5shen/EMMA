@@ -146,7 +146,7 @@ def _init_parser():
                         'default: 1']))
     emafftadd_group.add_argument('--lower', type=int, default=10,
             help=' '.join(['The lower bound of number of sequences in',
-                    'a sub-alignment that a query can be assigned to,'
+                    'a sub-alignment that a query can be assigned to,',
                     'default: 10']),
             required=False)
     emafftadd_group.add_argument('--upper', type=int, default=25,
