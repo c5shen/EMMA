@@ -41,7 +41,7 @@ Given an input existing alignment $C$ on set $S$ (i.e., backbone alignment) and 
 Installation
 ------------
 EMMA was tested and benchmarked on the following systems:
-* Red Hat Enterprise Linux Server release 7.9 (Maipo) with __Python 3.7.0__
+* Red Hat Enterprise Linux Server release 7.9 (Maipo) with __Python 3.9.16__
 * Ubuntu 22.04 LTS with __Python 3.7.12__
 
 EMMA requires the usage of `MAFFT` binaries. One is provided with the package (v7.490 2021/Oct/30), but the `MAFFT` binaries in the user's `$PATH` environment are prioritized. If you experience any difficulties running EMMA, please contact Chengze Shen (chengze5@illinois.edu).
